@@ -46,6 +46,8 @@ class RegressionTest {
     int version_min = 0;
     std::optional<int> version_max;
     std::optional<int> github_issue;
+    std::optional<int> intervention_log_enabled;
+    std::string intervention_log_api;
 
     std::vector<std::pair<std::string, std::string>> request_headers;
     std::vector<std::pair<std::string, std::string>> response_headers;
@@ -77,6 +79,8 @@ class RegressionTest {
 
     int http_code = 0;
     std::string redirect_url;
+    std::optional<int> intervention_log_present;
+    std::string intervention_log;
 
     // fields for formatting JSON
 

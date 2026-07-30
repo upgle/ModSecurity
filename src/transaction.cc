@@ -34,6 +34,7 @@
 
 #include "modsecurity/actions/action.h"
 #include "src/actions/disruptive/deny.h"
+#include "src/intervention_log.h"
 #include "modsecurity/intervention.h"
 #include "modsecurity/modsecurity.h"
 #include "src/request_body_processor/multipart.h"
@@ -953,8 +954,8 @@ int Transaction::appendRequestBody(const unsigned char *buf, size_t len) {
                     "request");
                 if (getRuleEngineState() == RulesSet::EnabledRuleEngine) {
                     intervention::free(&m_it);
-                    m_it.log = strdup("Request body limit is marked to " \
-                            "reject the request");
+                    intervention::setLog(this,
+                        "Request body limit is marked to reject the request");
                     m_it.status = 403;
                     m_it.disruptive = true;
                 } else {
@@ -1212,8 +1213,8 @@ int Transaction::appendResponseBody(const unsigned char *buf, size_t len) {
                     "request");
                 if (getRuleEngineState() == RulesSet::EnabledRuleEngine) {
                     intervention::free(&m_it);
-                    m_it.log = strdup("Response body limit is marked to reject " \
-                        "the request");
+                    intervention::setLog(this,
+                        "Response body limit is marked to reject the request");
                     m_it.status = 403;
                     m_it.disruptive = true;
                 } else {
@@ -1375,7 +1376,7 @@ bool Transaction::intervention(ModSecurityIntervention *it) {
         it->disruptive = m_it.disruptive;
         it->status = m_it.status;
 
-        if (m_it.log != NULL) {
+        if (m_ms->isInterventionLogEnabled() && m_it.log != NULL) {
             std::string log(m_it.log);
             utils::string::replaceAll(log, "%d",
                 std::to_string(it->status));
@@ -2386,4 +2387,3 @@ extern "C" size_t msc_get_rules_messages_rule_ids(const Transaction *transaction
 
 
 }  // namespace modsecurity
-

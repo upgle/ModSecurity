@@ -393,8 +393,24 @@ void ModSecurity::setServerLogCb(ModSecLogCb cb) {
 
 void ModSecurity::setServerLogCb(ModSecLogCb cb, int properties) { // cppcheck-suppress funcArgNamesDifferentUnnamed - this is a false positive
     m_logCb = (ModSecLogCb) cb;
-    m_logProperties = properties;
+    m_logProperties = (m_logProperties & InterventionLogDisabledProperty)
+        | (properties & ~InterventionLogDisabledProperty);
 }
+
+
+void ModSecurity::setInterventionLogEnabled(bool enabled) {
+    if (enabled) {
+        m_logProperties &= ~InterventionLogDisabledProperty;
+    } else {
+        m_logProperties |= InterventionLogDisabledProperty;
+    }
+}
+
+
+bool ModSecurity::isInterventionLogEnabled() const {
+    return (m_logProperties & InterventionLogDisabledProperty) == 0;
+}
+
 
 /**
  * @name    msc_set_log_cb
@@ -410,6 +426,25 @@ void ModSecurity::setServerLogCb(ModSecLogCb cb, int properties) { // cppcheck-s
  */
 extern "C" void msc_set_log_cb(ModSecurity *msc, ModSecLogCb cb) {
     msc->setServerLogCb(cb);
+}
+
+
+/**
+ * @name    msc_set_intervention_log_enabled
+ * @brief   Control generation of the intervention log payload.
+ *
+ * Connectors that do not consume ModSecurityIntervention::log may disable it
+ * to avoid formatting and copying unused text. The setting applies to the
+ * ModSecurity instance and every transaction created from it. Configure it
+ * before publishing the instance to worker threads.
+ *
+ * @param msc A non-NULL ModSecurity instance.
+ * @param enabled Zero to disable the payload, nonzero to enable it.
+ *
+ */
+extern "C" void msc_set_intervention_log_enabled(ModSecurity *msc,
+    int enabled) {
+    msc->setInterventionLogEnabled(enabled != 0);
 }
 
 /**
