@@ -307,9 +307,9 @@ class ModSecurity {
      * Configure it before publishing the instance to worker threads. Changing
      * it while transactions are being processed is not thread-safe.
     */
-    void setInterventionLogEnabled(bool enabled);
+    void setInterventionLogPayloadEnabled(bool enabled);
     /** Returns whether intervention log payload generation is enabled. */
-    bool isInterventionLogEnabled() const;
+    bool isInterventionLogPayloadEnabled() const;
 
     void serverLog(void *data, const RuleMessage &rm);
 
@@ -326,11 +326,12 @@ class ModSecurity {
 
  private:
     // Reserved internal bit; it must not be exposed as a LogProperty.
-    static constexpr int InterventionLogDisabledProperty = 0x40000000;
-    static_assert((InterventionLogDisabledProperty
+    static constexpr int InterventionLogPayloadDisabledMask = 0x40000000;
+    static_assert((InterventionLogPayloadDisabledMask
         & (TextLogProperty | RuleMessageLogProperty
             | IncludeFullHighlightLogProperty)) == 0,
-        "intervention log state must not overlap public log properties");
+        "intervention log payload state must not overlap public "
+        "log properties");
     std::string m_connector;
     std::string m_whoami;
     ModSecLogCb m_logCb;
@@ -368,7 +369,7 @@ void msc_set_log_cb(ModSecurity *msc, ModSecLogCb cb);
  * @param msc A non-NULL ModSecurity instance.
  * @param enabled Zero to disable the payload, nonzero to enable it.
  */
-void msc_set_intervention_log_enabled(ModSecurity *msc, int enabled);
+void msc_set_intervention_log_payload_enabled(ModSecurity *msc, int enabled);
 /** @ingroup ModSecurity_C_API */
 void msc_cleanup(ModSecurity *msc);
 

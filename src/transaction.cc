@@ -954,7 +954,7 @@ int Transaction::appendRequestBody(const unsigned char *buf, size_t len) {
                     "request");
                 if (getRuleEngineState() == RulesSet::EnabledRuleEngine) {
                     intervention::free(&m_it);
-                    intervention::setLog(this,
+                    intervention::setLogPayload(this,
                         "Request body limit is marked to reject the request");
                     m_it.status = 403;
                     m_it.disruptive = true;
@@ -1213,7 +1213,7 @@ int Transaction::appendResponseBody(const unsigned char *buf, size_t len) {
                     "request");
                 if (getRuleEngineState() == RulesSet::EnabledRuleEngine) {
                     intervention::free(&m_it);
-                    intervention::setLog(this,
+                    intervention::setLogPayload(this,
                         "Response body limit is marked to reject the request");
                     m_it.status = 403;
                     m_it.disruptive = true;
@@ -1376,7 +1376,7 @@ bool Transaction::intervention(ModSecurityIntervention *it) {
         it->disruptive = m_it.disruptive;
         it->status = m_it.status;
 
-        if (m_ms->isInterventionLogEnabled() && m_it.log != NULL) {
+        if (m_ms->isInterventionLogPayloadEnabled() && m_it.log != NULL) {
             std::string log(m_it.log);
             utils::string::replaceAll(log, "%d",
                 std::to_string(it->status));

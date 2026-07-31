@@ -36,7 +36,7 @@ int main (int argc, char **argv)
     msc_set_connector_info(modsec, "ModSecurity-test v0.0.1-alpha (Simple " \
         "example on how to use ModSecurity API");
     /* This example does not consume the intervention log payload. */
-    msc_set_intervention_log_enabled(modsec, 0);
+    msc_set_intervention_log_payload_enabled(modsec, 0);
 
     rules = msc_create_rules_set();
 

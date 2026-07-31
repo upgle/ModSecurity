@@ -101,8 +101,8 @@ void actions(ModSecurityTestResults<RegressionTest> *r,
             r->location.append(it.url);
         }
         if (it.log != nullptr) {
-            r->intervention_log_present = true;
-            r->intervention_log = it.log;
+            r->intervention_log_payload_present = true;
+            r->intervention_log_payload = it.log;
             *serverLog << it.log;
         }
         modsecurity::msc_intervention_cleanup(&it);
@@ -159,17 +159,17 @@ void perform_unit_test(const ModSecurityTest<RegressionTest> &test,
         modsecurity_test::ModSecurityTestContext context("ModSecurity-regression v0.0.1-alpha" \
             " (ModSecurity regression test utility)");
 
-        if (t->intervention_log_enabled.has_value()) {
-            const int enabled = t->intervention_log_enabled.value();
+        if (t->intervention_log_payload_enabled.has_value()) {
+            const int enabled = t->intervention_log_payload_enabled.value();
             // Exercise both state transitions before processing transactions.
-            if (t->intervention_log_api == "c") {
-                modsecurity::msc_set_intervention_log_enabled(
+            if (t->intervention_log_payload_api == "c") {
+                modsecurity::msc_set_intervention_log_payload_enabled(
                     &context.m_modsec, enabled == 0);
-                modsecurity::msc_set_intervention_log_enabled(
+                modsecurity::msc_set_intervention_log_payload_enabled(
                     &context.m_modsec, enabled);
             } else {
-                context.m_modsec.setInterventionLogEnabled(enabled == 0);
-                context.m_modsec.setInterventionLogEnabled(enabled != 0);
+                context.m_modsec.setInterventionLogPayloadEnabled(enabled == 0);
+                context.m_modsec.setInterventionLogPayloadEnabled(enabled != 0);
             }
             // Ensure callback configuration preserves the independent payload
             // setting, regardless of which setter is called first.
@@ -379,31 +379,32 @@ void perform_unit_test(const ModSecurityTest<RegressionTest> &test,
             testRes->reason << "Redirect URL mismatch. expecting: "
                 << t->redirect_url << " got: " << r.location << std::endl;
             testRes->passed = false;
-        } else if (t->intervention_log_present.has_value()
+        } else if (t->intervention_log_payload_present.has_value()
             && (!r.intervention_seen
-                || static_cast<int>(r.intervention_log_present)
-                    != t->intervention_log_present.value())) {
+                || static_cast<int>(r.intervention_log_payload_present)
+                    != t->intervention_log_payload_present.value())) {
             if (test.m_automake_output) {
                 std::cout << ":test-result: FAIL " << filename \
                     << ":" << t->name << std::endl;
             } else {
                 std::cout << KRED << "failed!" << RESET << std::endl;
             }
-            testRes->reason << "Intervention log presence mismatch."
+            testRes->reason << "Intervention log payload presence mismatch."
                 << std::endl;
             testRes->passed = false;
-        } else if (!t->intervention_log.empty()
-            && !contains(r.intervention_log, t->intervention_log)) {
+        } else if (!t->intervention_log_payload.empty()
+            && !contains(r.intervention_log_payload,
+                t->intervention_log_payload)) {
             if (test.m_automake_output) {
                 std::cout << ":test-result: FAIL " << filename \
                     << ":" << t->name << std::endl;
             } else {
                 std::cout << KRED << "failed!" << RESET << std::endl;
             }
-            testRes->reason << "Intervention log was not matching the "
+            testRes->reason << "Intervention log payload was not matching the "
                 << "expected results." << std::endl;
             testRes->reason << KWHT << "Expecting: " << RESET
-                << t->intervention_log;
+                << t->intervention_log_payload;
             testRes->passed = false;
         } else if (!t->audit_log.empty() && !contains(getAuditLogContent(modsec_transaction.m_rules->m_auditLog->m_path1), t->audit_log)) {
             if (test.m_automake_output) {

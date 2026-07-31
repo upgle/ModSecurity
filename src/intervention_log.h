@@ -26,10 +26,10 @@ namespace modsecurity {
 
 namespace intervention {
 
-static inline void setLog(Transaction *transaction,
+static inline void setLogPayload(Transaction *transaction,
     const RuleMessage &message) {
     freeLog(&transaction->m_it);
-    if (!transaction->m_ms->isInterventionLogEnabled()) {
+    if (!transaction->m_ms->isInterventionLogPayloadEnabled()) {
         return;
     }
 
@@ -38,9 +38,10 @@ static inline void setLog(Transaction *transaction,
 }
 
 
-static inline void setLog(Transaction *transaction, const char *message) {
+static inline void setLogPayload(Transaction *transaction,
+    const char *message) {
     freeLog(&transaction->m_it);
-    if (!transaction->m_ms->isInterventionLogEnabled()) {
+    if (!transaction->m_ms->isInterventionLogPayloadEnabled()) {
         return;
     }
 

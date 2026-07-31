@@ -48,7 +48,7 @@ bool Redirect::evaluate(RuleWithActions *rule, Transaction *transaction,
     transaction->m_it.url = strdup(m_urlExpanded.c_str());
     transaction->m_it.disruptive = true;
     ruleMessage.m_isDisruptive = true;
-    intervention::setLog(transaction, ruleMessage);
+    intervention::setLogPayload(transaction, ruleMessage);
 
     return true;
 }

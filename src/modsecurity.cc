@@ -393,22 +393,22 @@ void ModSecurity::setServerLogCb(ModSecLogCb cb) {
 
 void ModSecurity::setServerLogCb(ModSecLogCb cb, int properties) { // cppcheck-suppress funcArgNamesDifferentUnnamed - this is a false positive
     m_logCb = (ModSecLogCb) cb;
-    m_logProperties = (m_logProperties & InterventionLogDisabledProperty)
-        | (properties & ~InterventionLogDisabledProperty);
+    m_logProperties = (m_logProperties & InterventionLogPayloadDisabledMask)
+        | (properties & ~InterventionLogPayloadDisabledMask);
 }
 
 
-void ModSecurity::setInterventionLogEnabled(bool enabled) {
+void ModSecurity::setInterventionLogPayloadEnabled(bool enabled) {
     if (enabled) {
-        m_logProperties &= ~InterventionLogDisabledProperty;
+        m_logProperties &= ~InterventionLogPayloadDisabledMask;
     } else {
-        m_logProperties |= InterventionLogDisabledProperty;
+        m_logProperties |= InterventionLogPayloadDisabledMask;
     }
 }
 
 
-bool ModSecurity::isInterventionLogEnabled() const {
-    return (m_logProperties & InterventionLogDisabledProperty) == 0;
+bool ModSecurity::isInterventionLogPayloadEnabled() const {
+    return (m_logProperties & InterventionLogPayloadDisabledMask) == 0;
 }
 
 
@@ -430,7 +430,7 @@ extern "C" void msc_set_log_cb(ModSecurity *msc, ModSecLogCb cb) {
 
 
 /**
- * @name    msc_set_intervention_log_enabled
+ * @name    msc_set_intervention_log_payload_enabled
  * @brief   Control generation of the intervention log payload.
  *
  * Connectors that do not consume ModSecurityIntervention::log may disable it
@@ -442,9 +442,9 @@ extern "C" void msc_set_log_cb(ModSecurity *msc, ModSecLogCb cb) {
  * @param enabled Zero to disable the payload, nonzero to enable it.
  *
  */
-extern "C" void msc_set_intervention_log_enabled(ModSecurity *msc,
+extern "C" void msc_set_intervention_log_payload_enabled(ModSecurity *msc,
     int enabled) {
-    msc->setInterventionLogEnabled(enabled != 0);
+    msc->setInterventionLogPayloadEnabled(enabled != 0);
 }
 
 /**

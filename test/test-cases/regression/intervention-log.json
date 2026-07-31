@@ -38,8 +38,8 @@
       "debug_log": "Running action deny",
       "error_log": "default intervention payload marker",
       "http_code": 451,
-      "intervention_log_present": 1,
-      "intervention_log": "default intervention payload marker"
+      "intervention_log_payload_present": 1,
+      "intervention_log_payload": "default intervention payload marker"
     },
     "rules": [
       "SecRuleEngine On",
@@ -54,8 +54,8 @@
     "enabled": 1,
     "version_min": 300000,
     "title": "C++ API can re-enable the intervention log payload",
-    "intervention_log_enabled": 1,
-    "intervention_log_api": "cpp",
+    "intervention_log_payload_enabled": 1,
+    "intervention_log_payload_api": "cpp",
     "client": {
       "ip": "192.0.2.1",
       "port": 12345
@@ -88,8 +88,8 @@
     },
     "expected": {
       "http_code": 453,
-      "intervention_log_present": 1,
-      "intervention_log": "re-enabled intervention payload marker"
+      "intervention_log_payload_present": 1,
+      "intervention_log_payload": "re-enabled intervention payload marker"
     },
     "rules": [
       "SecRuleEngine On",
@@ -100,8 +100,8 @@
     "enabled": 1,
     "version_min": 300000,
     "title": "C++ API omits only the intervention log payload",
-    "intervention_log_enabled": 0,
-    "intervention_log_api": "cpp",
+    "intervention_log_payload_enabled": 0,
+    "intervention_log_payload_api": "cpp",
     "client": {
       "ip": "192.0.2.1",
       "port": 12345
@@ -137,7 +137,7 @@
       "debug_log": "Running action deny",
       "error_log": "C\\+\\+ server callback marker",
       "http_code": 451,
-      "intervention_log_present": 0
+      "intervention_log_payload_present": 0
     },
     "rules": [
       "SecRuleEngine On",
@@ -153,8 +153,8 @@
     "enabled": 1,
     "version_min": 300000,
     "title": "C API omits only the intervention log payload",
-    "intervention_log_enabled": 0,
-    "intervention_log_api": "c",
+    "intervention_log_payload_enabled": 0,
+    "intervention_log_payload_api": "c",
     "client": {
       "ip": "192.0.2.1",
       "port": 12345
@@ -189,7 +189,7 @@
       "debug_log": "Running action deny",
       "error_log": "C API server callback marker",
       "http_code": 452,
-      "intervention_log_present": 0
+      "intervention_log_payload_present": 0
     },
     "rules": [
       "SecRuleEngine On",
@@ -200,9 +200,9 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "Disabled intervention log preserves drop",
-    "intervention_log_enabled": 0,
-    "intervention_log_api": "cpp",
+    "title": "Disabled intervention log payload preserves drop",
+    "intervention_log_payload_enabled": 0,
+    "intervention_log_payload_api": "cpp",
     "client": {
       "ip": "192.0.2.1",
       "port": 12345
@@ -236,7 +236,7 @@
     "expected": {
       "debug_log": "Running action drop",
       "http_code": 403,
-      "intervention_log_present": 0
+      "intervention_log_payload_present": 0
     },
     "rules": [
       "SecRuleEngine On",
@@ -246,9 +246,9 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "Disabled intervention log preserves redirect",
-    "intervention_log_enabled": 0,
-    "intervention_log_api": "cpp",
+    "title": "Disabled intervention log payload preserves redirect",
+    "intervention_log_payload_enabled": 0,
+    "intervention_log_payload_api": "cpp",
     "client": {
       "ip": "192.0.2.1",
       "port": 12345
@@ -282,7 +282,7 @@
     "expected": {
       "http_code": 302,
       "redirect_url": "https://example.test/blocked",
-      "intervention_log_present": 0
+      "intervention_log_payload_present": 0
     },
     "rules": [
       "SecRuleEngine On",
@@ -292,7 +292,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "Request body-limit intervention log is enabled by default",
+    "title": "Request body-limit intervention log payload is enabled by default",
     "client": {
       "ip": "192.0.2.1",
       "port": 12345
@@ -326,8 +326,8 @@
     },
     "expected": {
       "http_code": 403,
-      "intervention_log_present": 1,
-      "intervention_log": "Request body limit is marked to reject the request"
+      "intervention_log_payload_present": 1,
+      "intervention_log_payload": "Request body limit is marked to reject the request"
     },
     "rules": [
       "SecRuleEngine On",
@@ -339,9 +339,9 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "Disabled intervention log preserves request body-limit rejection",
-    "intervention_log_enabled": 0,
-    "intervention_log_api": "cpp",
+    "title": "Disabled intervention log payload preserves request body-limit rejection",
+    "intervention_log_payload_enabled": 0,
+    "intervention_log_payload_api": "cpp",
     "client": {
       "ip": "192.0.2.1",
       "port": 12345
@@ -375,7 +375,7 @@
     },
     "expected": {
       "http_code": 403,
-      "intervention_log_present": 0
+      "intervention_log_payload_present": 0
     },
     "rules": [
       "SecRuleEngine On",
@@ -387,7 +387,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "Response body-limit intervention log is enabled by default",
+    "title": "Response body-limit intervention log payload is enabled by default",
     "client": {
       "ip": "192.0.2.1",
       "port": 12345
@@ -420,8 +420,8 @@
     },
     "expected": {
       "http_code": 403,
-      "intervention_log_present": 1,
-      "intervention_log": "Response body limit is marked to reject the request"
+      "intervention_log_payload_present": 1,
+      "intervention_log_payload": "Response body limit is marked to reject the request"
     },
     "rules": [
       "SecRuleEngine On",
@@ -434,9 +434,9 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "Disabled intervention log preserves response body-limit rejection",
-    "intervention_log_enabled": 0,
-    "intervention_log_api": "cpp",
+    "title": "Disabled intervention log payload preserves response body-limit rejection",
+    "intervention_log_payload_enabled": 0,
+    "intervention_log_payload_api": "cpp",
     "client": {
       "ip": "192.0.2.1",
       "port": 12345
@@ -469,7 +469,7 @@
     },
     "expected": {
       "http_code": 403,
-      "intervention_log_present": 0
+      "intervention_log_payload_present": 0
     },
     "rules": [
       "SecRuleEngine On",

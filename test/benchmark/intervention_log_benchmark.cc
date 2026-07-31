@@ -71,7 +71,7 @@ Sample run_sample(modsecurity::ModSecurity *modsec,
     modsecurity::RulesSet *rules, bool enabled,
     unsigned long long iterations, unsigned long long round,
     const char *order) {
-    modsec->setInterventionLogEnabled(enabled);
+    modsec->setInterventionLogPayloadEnabled(enabled);
 
     uint64_t sample_observable = 0;
     const auto start = std::chrono::steady_clock::now();
