@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+# ModSecurity, http://www.modsecurity.org/
+# Copyright (c) 2026 OWASP ModSecurity Project
+#
+# You may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# If any of the files related to licensing are missing or if you have any
+# other questions related to licensing, please contact OWASP directly using
+# the email address modsecurity@owasp.org.
+
 """Render a dependency-free paired estimation plot from benchmark CSV data."""
 
 import argparse
