@@ -94,18 +94,24 @@ void actions(ModSecurityTestResults<RegressionTest> *r,
     it.status = 200;
     if (a->intervention(&it) == true) {
         r->intervention_seen = true;
+        if (it.pause != 0) {
+            // FIXME:
+        }
         if (it.status != 0) {
             r->status = it.status;
         }
         if (it.url != nullptr) {
             r->location.append(it.url);
+	    free(it.url);
+	    it.url = nullptr;
         }
         if (it.log != nullptr) {
             r->intervention_log_payload_present = true;
             r->intervention_log_payload = it.log;
             *serverLog << it.log;
+            free(it.log);
+            it.log = nullptr;
         }
-        modsecurity::msc_intervention_cleanup(&it);
     }
 }
 
@@ -159,21 +165,59 @@ void perform_unit_test(const ModSecurityTest<RegressionTest> &test,
         modsecurity_test::ModSecurityTestContext context("ModSecurity-regression v0.0.1-alpha" \
             " (ModSecurity regression test utility)");
 
+        const bool exercises_intervention_log_payload =
+            t->intervention_log_payload_enabled.has_value()
+            || t->intervention_log_payload_present.has_value()
+            || !t->intervention_log_payload.empty();
+        const bool expected_intervention_log_payload_enabled =
+            !t->intervention_log_payload_enabled.has_value()
+            || t->intervention_log_payload_enabled.value() != 0;
+        bool intervention_log_payload_api_state_valid = true;
+        const auto check_intervention_log_payload_state =
+            [&context, &intervention_log_payload_api_state_valid](
+                bool expected) {
+                intervention_log_payload_api_state_valid =
+                    intervention_log_payload_api_state_valid
+                    && context.m_modsec.isInterventionLogPayloadEnabled()
+                        == expected;
+            };
+
+        if (exercises_intervention_log_payload) {
+            check_intervention_log_payload_state(true);
+        }
+
         if (t->intervention_log_payload_enabled.has_value()) {
             const int enabled = t->intervention_log_payload_enabled.value();
             // Exercise both state transitions before processing transactions.
             if (t->intervention_log_payload_api == "c") {
                 modsecurity::msc_set_intervention_log_payload_enabled(
                     &context.m_modsec, enabled == 0);
+                check_intervention_log_payload_state(enabled == 0);
                 modsecurity::msc_set_intervention_log_payload_enabled(
                     &context.m_modsec, enabled);
+                check_intervention_log_payload_state(enabled != 0);
             } else {
                 context.m_modsec.setInterventionLogPayloadEnabled(enabled == 0);
+                check_intervention_log_payload_state(enabled == 0);
                 context.m_modsec.setInterventionLogPayloadEnabled(enabled != 0);
+                check_intervention_log_payload_state(enabled != 0);
             }
-            // Ensure callback configuration preserves the independent payload
-            // setting, regardless of which setter is called first.
+        }
+
+        if (exercises_intervention_log_payload) {
+            // Both callback overloads must preserve the independent payload
+            // setting and public log-property mask.
             context.reset_server_log_callback();
+            check_intervention_log_payload_state(
+                expected_intervention_log_payload_enabled);
+            context.reset_server_log_callback(
+                modsecurity::RuleMessageLogProperty
+                | modsecurity::IncludeFullHighlightLogProperty);
+            check_intervention_log_payload_state(
+                expected_intervention_log_payload_enabled);
+            context.reset_server_log_callback();
+            check_intervention_log_payload_state(
+                expected_intervention_log_payload_enabled);
         }
 
         bool found = true;
@@ -367,6 +411,19 @@ void perform_unit_test(const ModSecurityTest<RegressionTest> &test,
                 << "expected results." << std::endl;
             testRes->reason << KWHT << "Expecting: " << RESET \
                 << t->error_log + "";
+            testRes->passed = false;
+        } else if (exercises_intervention_log_payload
+            && (!intervention_log_payload_api_state_valid
+                || context.m_modsec.isInterventionLogPayloadEnabled()
+                    != expected_intervention_log_payload_enabled)) {
+            if (test.m_automake_output) {
+                std::cout << ":test-result: FAIL " << filename \
+                    << ":" << t->name << std::endl;
+            } else {
+                std::cout << KRED << "failed!" << RESET << std::endl;
+            }
+            testRes->reason << "Intervention log payload API state mismatch."
+                << std::endl;
             testRes->passed = false;
         } else if (!t->redirect_url.empty()
             && r.location != t->redirect_url) {

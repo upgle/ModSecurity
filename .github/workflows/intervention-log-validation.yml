@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - ".github/workflows/intervention-log-validation.yml"
-      - "examples/simple_example_using_c/**"
       - "headers/modsecurity/modsecurity.h"
       - "src/actions/disruptive/**"
       - "src/intervention_log.h"

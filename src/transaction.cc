@@ -1376,7 +1376,7 @@ bool Transaction::intervention(ModSecurityIntervention *it) {
         it->disruptive = m_it.disruptive;
         it->status = m_it.status;
 
-        if (m_ms->isInterventionLogPayloadEnabled() && m_it.log != NULL) {
+        if (m_it.log != NULL) {
             std::string log(m_it.log);
             utils::string::replaceAll(log, "%d",
                 std::to_string(it->status));
@@ -2387,3 +2387,4 @@ extern "C" size_t msc_get_rules_messages_rule_ids(const Transaction *transaction
 
 
 }  // namespace modsecurity
+

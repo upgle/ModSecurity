@@ -39,7 +39,7 @@
       "error_log": "default intervention payload marker",
       "http_code": 451,
       "intervention_log_payload_present": 1,
-      "intervention_log_payload": "default intervention payload marker"
+      "intervention_log_payload": "Access denied with code 451 \\(phase 1\\).*default intervention payload marker"
     },
     "rules": [
       "SecRuleEngine On",
@@ -48,6 +48,52 @@
       "SecAuditLogType Serial",
       "SecAuditLog /tmp/modsecurity-intervention-log-test.log",
       "SecAction \"id:100001,phase:1,deny,status:451,log,auditlog,msg:'default intervention payload marker'\""
+    ]
+  },
+  {
+    "enabled": 1,
+    "version_min": 300000,
+    "title": "C API treats any nonzero value as payload enabled",
+    "intervention_log_payload_enabled": 7,
+    "intervention_log_payload_api": "c",
+    "client": {
+      "ip": "192.0.2.1",
+      "port": 12345
+    },
+    "server": {
+      "ip": "192.0.2.2",
+      "port": 80
+    },
+    "request": {
+      "headers": {
+        "Host": "example.test",
+        "Content-Length": "0"
+      },
+      "uri": "/",
+      "method": "GET",
+      "http_version": 1.1,
+      "body": [
+        ""
+      ]
+    },
+    "response": {
+      "headers": {
+        "Content-Type": "text/plain",
+        "Content-Length": "0"
+      },
+      "body": [
+        ""
+      ],
+      "protocol": "HTTP/1.1"
+    },
+    "expected": {
+      "http_code": 454,
+      "intervention_log_payload_present": 1,
+      "intervention_log_payload": "Access denied with code 454 \\(phase 1\\).*C API nonzero payload marker"
+    },
+    "rules": [
+      "SecRuleEngine On",
+      "SecAction \"id:100015,phase:1,deny,status:454,nolog,msg:'C API nonzero payload marker'\""
     ]
   },
   {
@@ -200,6 +246,51 @@
   {
     "enabled": 1,
     "version_min": 300000,
+    "title": "Drop includes the intervention log payload by default",
+    "client": {
+      "ip": "192.0.2.1",
+      "port": 12345
+    },
+    "server": {
+      "ip": "192.0.2.2",
+      "port": 80
+    },
+    "request": {
+      "headers": {
+        "Host": "example.test",
+        "Content-Length": "0"
+      },
+      "uri": "/",
+      "method": "GET",
+      "http_version": 1.1,
+      "body": [
+        ""
+      ]
+    },
+    "response": {
+      "headers": {
+        "Content-Type": "text/plain",
+        "Content-Length": "0"
+      },
+      "body": [
+        ""
+      ],
+      "protocol": "HTTP/1.1"
+    },
+    "expected": {
+      "debug_log": "Running action drop",
+      "http_code": 403,
+      "intervention_log_payload_present": 1,
+      "intervention_log_payload": "Access denied with code 403 \\(phase 1\\).*default drop payload marker"
+    },
+    "rules": [
+      "SecRuleEngine On",
+      "SecAction \"id:100016,phase:1,drop,nolog,msg:'default drop payload marker'\""
+    ]
+  },
+  {
+    "enabled": 1,
+    "version_min": 300000,
     "title": "Disabled intervention log payload preserves drop",
     "intervention_log_payload_enabled": 0,
     "intervention_log_payload_api": "cpp",
@@ -241,6 +332,51 @@
     "rules": [
       "SecRuleEngine On",
       "SecAction \"id:100004,phase:1,drop,nolog\""
+    ]
+  },
+  {
+    "enabled": 1,
+    "version_min": 300000,
+    "title": "Redirect includes the intervention log payload by default",
+    "client": {
+      "ip": "192.0.2.1",
+      "port": 12345
+    },
+    "server": {
+      "ip": "192.0.2.2",
+      "port": 80
+    },
+    "request": {
+      "headers": {
+        "Host": "example.test",
+        "Content-Length": "0"
+      },
+      "uri": "/",
+      "method": "GET",
+      "http_version": 1.1,
+      "body": [
+        ""
+      ]
+    },
+    "response": {
+      "headers": {
+        "Content-Type": "text/plain",
+        "Content-Length": "0"
+      },
+      "body": [
+        ""
+      ],
+      "protocol": "HTTP/1.1"
+    },
+    "expected": {
+      "http_code": 302,
+      "redirect_url": "https://example.test/default-redirect",
+      "intervention_log_payload_present": 1,
+      "intervention_log_payload": "Access denied with code 302 \\(phase 1\\).*default redirect payload marker"
+    },
+    "rules": [
+      "SecRuleEngine On",
+      "SecAction \"id:100017,phase:1,redirect:'https://example.test/default-redirect',nolog,msg:'default redirect payload marker'\""
     ]
   },
   {
