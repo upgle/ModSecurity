@@ -85,9 +85,12 @@ jobs:
         run: make check TESTS=test/test-cases/regression/intervention-log.json
 
       - name: Record runner metadata
+        env:
+          SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           mkdir -p benchmark-results
-          git rev-parse HEAD > benchmark-results/commit.txt
+          git rev-parse HEAD > benchmark-results/checkout-commit.txt
+          printf '%s\n' "$SOURCE_COMMIT" > benchmark-results/source-commit.txt
           uname -a > benchmark-results/uname.txt
           lscpu > benchmark-results/lscpu.txt
           g++ --version > benchmark-results/compiler.txt
@@ -106,7 +109,7 @@ jobs:
 
       - name: Upload benchmark evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: intervention-log-benchmark-${{ github.run_id }}
           path: benchmark-results/
