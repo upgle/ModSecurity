@@ -61,6 +61,11 @@ jobs:
             libyajl-dev \
             pkg-config
 
+      - name: Install plotting dependency
+        run: |
+          sudo apt-get install -y --no-install-recommends \
+            python3-matplotlib
+
       - name: Configure release build
         env:
           CFLAGS: -O3 -DNDEBUG
@@ -93,6 +98,9 @@ jobs:
           uname -a > benchmark-results/uname.txt
           lscpu > benchmark-results/lscpu.txt
           g++ --version > benchmark-results/compiler.txt
+          python3 --version > benchmark-results/python.txt
+          dpkg-query -W python3-matplotlib python3-numpy \
+            > benchmark-results/plotting-stack.txt
 
       - name: Run paired release benchmark
         env:
@@ -110,6 +118,7 @@ jobs:
         env:
           BENCHMARK_RUN_URL: >-
             ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MPLCONFIGDIR: ${{ runner.temp }}/matplotlib
         run: |
           python3 test/benchmark/plot_intervention_log_benchmark.py \
             --input benchmark-results/intervention-log.csv \

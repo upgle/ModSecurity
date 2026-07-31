@@ -11,113 +11,50 @@
 # other questions related to licensing, please contact OWASP directly using
 # the email address modsecurity@owasp.org.
 
-"""Render a dependency-free paired estimation plot from benchmark CSV data."""
+"""Render a publication-style paired benchmark figure with Matplotlib."""
 
 import argparse
 import csv
+import io
 import math
 import re
 import statistics
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
+import matplotlib
+
+matplotlib.use("svg")
+
+from matplotlib import pyplot as plt  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+
 
 SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 ET.register_namespace("", SVG_NAMESPACE)
+ET.register_namespace("xlink", "http://www.w3.org/1999/xlink")
+ET.register_namespace("dc", "http://purl.org/dc/elements/1.1/")
+ET.register_namespace("cc", "http://creativecommons.org/ns#")
+ET.register_namespace("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
 
 COLORS = {
-    "background": "#FFFFFF",
-    "foreground": "#17212B",
-    "muted": "#596675",
-    "grid": "#DCE3E9",
-    "pair": "#8793A1",
-    "enabled": "#D55E00",
-    "disabled": "#0072B2",
-    "effect": "#009E73",
+    "text": "#222222",
+    "muted": "#666666",
+    "grid": "#D9D9D9",
+    "pair": "#BDBDBD",
+    "enabled": "#595959",
+    "disabled": "#2C7FB8",
+    "effect": "#222222",
+    "zero": "#8C8C8C",
+}
+
+ORDER_MARKERS = {
+    "enabled-first": "o",
+    "disabled-first": "^",
 }
 
 
-def svg_element(tag, attributes=None, text=None):
-    element = ET.Element("{%s}%s" % (SVG_NAMESPACE, tag), attributes or {})
-    if text is not None:
-        element.text = text
-    return element
-
-
-def svg_child(parent, tag, attributes=None, text=None):
-    element = ET.SubElement(
-        parent, "{%s}%s" % (SVG_NAMESPACE, tag), attributes or {})
-    if text is not None:
-        element.text = text
-    return element
-
-
-def add_text(parent, x, y, value, css_class, anchor=None, transform=None):
-    attributes = {
-        "x": format_number(x),
-        "y": format_number(y),
-        "class": css_class,
-    }
-    if anchor:
-        attributes["text-anchor"] = anchor
-    if transform:
-        attributes["transform"] = transform
-    return svg_child(parent, "text", attributes, value)
-
-
-def add_line(parent, x1, y1, x2, y2, css_class):
-    return svg_child(parent, "line", {
-        "x1": format_number(x1),
-        "y1": format_number(y1),
-        "x2": format_number(x2),
-        "y2": format_number(y2),
-        "class": css_class,
-    })
-
-
-def add_marker(parent, x, y, order, fill, radius=6.0, css_class="point"):
-    common = {"class": css_class, "fill": fill}
-    if order == "enabled-first":
-        common.update({
-            "cx": format_number(x),
-            "cy": format_number(y),
-            "r": format_number(radius),
-        })
-        return svg_child(parent, "circle", common)
-
-    triangle_height = radius * 1.9
-    points = [
-        (x, y - triangle_height * 0.62),
-        (x - radius, y + triangle_height * 0.38),
-        (x + radius, y + triangle_height * 0.38),
-    ]
-    common["points"] = " ".join(
-        "%s,%s" % (format_number(px), format_number(py))
-        for px, py in points)
-    return svg_child(parent, "polygon", common)
-
-
-def add_diamond(parent, x, y, radius, fill, css_class="median-point"):
-    points = [
-        (x, y - radius),
-        (x + radius, y),
-        (x, y + radius),
-        (x - radius, y),
-    ]
-    return svg_child(parent, "polygon", {
-        "points": " ".join(
-            "%s,%s" % (format_number(px), format_number(py))
-            for px, py in points),
-        "class": css_class,
-        "fill": fill,
-    })
-
-
-def format_number(value):
-    return ("%.3f" % float(value)).rstrip("0").rstrip(".")
-
-
-def nice_tick_step(span, target_ticks=7):
+def nice_tick_step(span, target_ticks=5):
     if span <= 0:
         return 1.0
     rough_step = span / float(target_ticks)
@@ -127,10 +64,6 @@ def nice_tick_step(span, target_ticks=7):
         if candidate >= rough_step:
             return candidate
     return 10.0 * magnitude
-
-
-def short_revision(revision):
-    return revision[:7] if revision and revision != "unknown" else "unknown"
 
 
 def parse_metadata_file(path, prefix):
@@ -169,7 +102,7 @@ def read_pairs(csv_path):
             if round_number <= 0:
                 raise ValueError("Round numbers must be positive")
             order = row["order"]
-            if order not in ("enabled-first", "disabled-first"):
+            if order not in ORDER_MARKERS:
                 raise ValueError("Unexpected execution order: %s" % order)
             transactions = int(row["transactions"])
             if transactions <= 0:
@@ -207,7 +140,7 @@ def read_pairs(csv_path):
 
 
 def exact_median_interval(values, target_coverage=0.95):
-    """Return the narrowest central order-statistic interval at target coverage."""
+    """Return the narrowest central order-statistic median interval."""
     ordered = sorted(values)
     count = len(ordered)
     selected_tail_count = 0
@@ -230,18 +163,105 @@ def exact_median_interval(values, target_coverage=0.95):
     )
 
 
-def render_figure(pairs, transactions, output_path, metadata):
-    width = 1440
-    height = 920
-    root = svg_element("svg", {
-        "width": str(width),
-        "height": str(height),
-        "viewBox": "0 0 %d %d" % (width, height),
-        "role": "img",
-        "aria-labelledby": "figure-title figure-description",
+def configure_matplotlib():
+    matplotlib.rcParams.update({
+        "font.family": "sans-serif",
+        "font.sans-serif": ["DejaVu Sans"],
+        "font.size": 8.0,
+        "axes.titlesize": 8.5,
+        "axes.titleweight": "semibold",
+        "axes.labelsize": 8.0,
+        "axes.labelcolor": COLORS["text"],
+        "axes.edgecolor": COLORS["text"],
+        "axes.linewidth": 0.65,
+        "axes.axisbelow": True,
+        "xtick.labelsize": 7.5,
+        "ytick.labelsize": 7.5,
+        "xtick.color": COLORS["text"],
+        "ytick.color": COLORS["text"],
+        "xtick.major.size": 2.5,
+        "ytick.major.size": 2.5,
+        "xtick.major.width": 0.6,
+        "ytick.major.width": 0.6,
+        "legend.fontsize": 6.8,
+        "lines.solid_capstyle": "round",
+        "figure.facecolor": "white",
+        "savefig.facecolor": "white",
+        "svg.fonttype": "none",
+        "svg.hashsalt": "modsecurity-intervention-log-benchmark",
     })
-    svg_child(root, "title", {"id": "figure-title"},
-        "Intervention log payload cost in a phase-1 deny microbenchmark")
+
+
+def style_axis(axis):
+    axis.spines["top"].set_visible(False)
+    axis.spines["right"].set_visible(False)
+
+
+def effect_limits(differences):
+    observed_min = min(differences)
+    observed_max = max(differences)
+    data_span = observed_max - observed_min
+    padding = max(0.25, data_span * 0.12)
+    lower = min(0.0, observed_min) - padding
+    upper = max(0.0, observed_max) + padding
+    tick_step = nice_tick_step(upper - lower)
+    first_tick = int(math.ceil(lower / tick_step - 1e-9))
+    last_tick = int(math.floor(upper / tick_step + 1e-9))
+    ticks = [index * tick_step for index in range(first_tick, last_tick + 1)]
+    return lower, upper, ticks
+
+
+def add_accessibility_metadata(svg_bytes, pairs, statistics_summary, metadata):
+    root = ET.fromstring(svg_bytes)
+    title_id = "figure-title"
+    description_id = "figure-description"
+    root.set("role", "img")
+    root.set("aria-labelledby", "%s %s" % (title_id, description_id))
+    root.set("data-source-commit", metadata["source_commit"])
+    root.set("data-checkout-commit", metadata["checkout_commit"])
+    root.set("data-run-url", metadata["run_url"])
+    root.set("data-environment", metadata["environment"])
+    root.set("data-matplotlib-version", matplotlib.__version__)
+
+    positive_count = sum(pair["difference"] > 0.0 for pair in pairs)
+    title = root.find("{%s}title" % SVG_NAMESPACE)
+    if title is None:
+        title = ET.Element("{%s}title" % SVG_NAMESPACE)
+    else:
+        root.remove(title)
+    title.set("id", title_id)
+    title.text = "Paired phase-1 deny benchmark"
+    description = ET.Element(
+        "{%s}desc" % SVG_NAMESPACE, {"id": description_id})
+    description.text = (
+        "%d paired round aggregates compare intervention log payload enabled "
+        "and disabled. Payload disabled had a lower sample mean in %d rounds. "
+        "The median enabled-minus-disabled difference was %.3f microseconds "
+        "per transaction; its exact %.1f percent order-statistic interval was "
+        "%.3f to %.3f microseconds."
+        % (
+            len(pairs),
+            positive_count,
+            statistics_summary["difference_median"],
+            statistics_summary["interval_coverage"] * 100.0,
+            statistics_summary["interval_low"],
+            statistics_summary["interval_high"],
+        )
+    )
+    root.insert(0, title)
+    root.insert(1, description)
+
+    tree = ET.ElementTree(root)
+    if hasattr(ET, "indent"):
+        ET.indent(tree, space="  ")
+    output = io.BytesIO()
+    tree.write(output, encoding="utf-8", xml_declaration=True)
+    output.write(b"\n")
+    return output.getvalue()
+
+
+def render_figure(pairs, transactions, output_path, metadata):
+    configure_matplotlib()
 
     enabled_values = [pair["enabled"] for pair in pairs]
     disabled_values = [pair["disabled"] for pair in pairs]
@@ -254,250 +274,225 @@ def render_figure(pairs, transactions, output_path, metadata):
     interval_low, interval_high, interval_coverage = exact_median_interval(
         differences)
 
-    positive_count = sum(value > 0.0 for value in differences)
-    negative_count = sum(value < 0.0 for value in differences)
-    zero_count = len(differences) - positive_count - negative_count
-    direction_description = (
-        "%d positive, %d negative, and %d zero paired differences"
-        % (positive_count, negative_count, zero_count)
+    statistics_summary = {
+        "difference_median": difference_median,
+        "interval_low": interval_low,
+        "interval_high": interval_high,
+        "interval_coverage": interval_coverage,
+    }
+
+    figure, (time_axis, effect_axis) = plt.subplots(
+        1,
+        2,
+        figsize=(7.2, 3.45),
+        gridspec_kw={"width_ratios": (0.44, 0.56)},
+    )
+    figure.subplots_adjust(
+        left=0.095, right=0.99, bottom=0.21, top=0.86, wspace=0.34)
+
+    for pair in pairs:
+        time_axis.plot(
+            (0.0, 1.0),
+            (pair["enabled"], pair["disabled"]),
+            color=COLORS["pair"],
+            linewidth=0.65,
+            zorder=1,
+        )
+
+    for order, marker in ORDER_MARKERS.items():
+        selected = [pair for pair in pairs if pair["order"] == order]
+        time_axis.scatter(
+            [0.0] * len(selected),
+            [pair["enabled"] for pair in selected],
+            marker=marker,
+            s=24,
+            facecolor=COLORS["enabled"],
+            edgecolor="white",
+            linewidth=0.45,
+            zorder=2,
+        )
+        time_axis.scatter(
+            [1.0] * len(selected),
+            [pair["disabled"] for pair in selected],
+            marker=marker,
+            s=24,
+            facecolor=COLORS["disabled"],
+            edgecolor="white",
+            linewidth=0.45,
+            zorder=2,
+        )
+
+    for x_value, median_value, label_offset, alignment in (
+        (0.0, enabled_median, -0.19, "right"),
+        (1.0, disabled_median, 0.19, "left"),
+    ):
+        time_axis.plot(
+            (x_value - 0.13, x_value + 0.13),
+            (median_value, median_value),
+            color=COLORS["text"],
+            linewidth=1.35,
+            zorder=3,
+        )
+        time_axis.text(
+            x_value + label_offset,
+            median_value,
+            "%.2f" % median_value,
+            ha=alignment,
+            va="center",
+            fontsize=7.0,
+            color=COLORS["text"],
+        )
+
+    latency_max = max(25.0, math.ceil(max(enabled_values) / 5.0) * 5.0)
+    time_axis.set_xlim(-0.48, 1.48)
+    time_axis.set_ylim(0.0, latency_max)
+    time_axis.set_xticks((0.0, 1.0), ("Payload\nenabled", "Payload\ndisabled"))
+    time_axis.set_yticks(
+        [float(value) for value in range(0, int(latency_max) + 1, 5)])
+    time_axis.set_ylabel("Sample mean time\n(µs/transaction)")
+    time_axis.set_title("A   Sample means", loc="left", pad=7.0)
+    time_axis.grid(axis="y", color=COLORS["grid"], linewidth=0.45)
+    time_axis.tick_params(axis="x", length=0, pad=5)
+    style_axis(time_axis)
+
+    y_positions = list(range(len(pairs), 0, -1))
+    for order, marker in ORDER_MARKERS.items():
+        selected = [
+            (position, pair)
+            for position, pair in zip(y_positions, pairs)
+            if pair["order"] == order
+        ]
+        effect_axis.scatter(
+            [pair["difference"] for _, pair in selected],
+            [position for position, _ in selected],
+            marker=marker,
+            s=25,
+            facecolor=COLORS["effect"],
+            edgecolor="white",
+            linewidth=0.45,
+            zorder=3,
+        )
+
+    summary_y = -0.25
+    effect_axis.axvline(
+        0.0,
+        color=COLORS["zero"],
+        linewidth=0.65,
+        linestyle=(0, (3, 2)),
+        zorder=1,
+    )
+    effect_axis.axhline(
+        0.38, color=COLORS["grid"], linewidth=0.5, zorder=1)
+    effect_axis.errorbar(
+        difference_median,
+        summary_y,
+        xerr=(
+            (difference_median - interval_low,),
+            (interval_high - difference_median,),
+        ),
+        fmt="s",
+        markersize=4.0,
+        markerfacecolor=COLORS["effect"],
+        markeredgecolor=COLORS["effect"],
+        ecolor=COLORS["effect"],
+        elinewidth=1.15,
+        capsize=2.5,
+        capthick=1.0,
+        zorder=4,
+    )
+    effect_axis.annotate(
+        "%.2f  [%.2f, %.2f]" % (
+            difference_median, interval_low, interval_high),
+        xy=(difference_median, summary_y),
+        xytext=(0, 5),
+        textcoords="offset points",
+        ha="center",
+        va="bottom",
+        fontsize=6.8,
+        color=COLORS["text"],
+    )
+
+    effect_min, effect_max, effect_ticks = effect_limits(differences)
+    effect_axis.set_xlim(effect_min, effect_max)
+    effect_axis.set_xticks(effect_ticks)
+    effect_axis.set_ylim(-1.35, len(pairs) + 0.65)
+    effect_axis.set_yticks(
+        y_positions + [summary_y],
+        ["R%d" % pair["round"] for pair in pairs] + ["Median"],
+    )
+    effect_axis.set_xlabel(
+        "Difference in sample mean\n(enabled − disabled, µs/transaction)")
+    effect_axis.set_title("B   Paired differences by round", loc="left", pad=7.0)
+    effect_axis.grid(axis="x", color=COLORS["grid"], linewidth=0.45)
+    effect_axis.tick_params(axis="y", length=0, pad=4)
+    style_axis(effect_axis)
+
+    legend_handles = [
+        Line2D(
+            [], [],
+            linestyle="none",
+            marker=marker,
+            markersize=4.2,
+            markerfacecolor=COLORS["effect"],
+            markeredgecolor="white",
+            markeredgewidth=0.45,
+            label=label,
+        )
+        for marker, label in (
+            ("o", "enabled measured first"),
+            ("^", "disabled measured first"),
+        )
+    ]
+    figure.legend(
+        handles=legend_handles,
+        loc="upper right",
+        bbox_to_anchor=(0.99, 0.985),
+        frameon=False,
+        ncol=2,
+        handletextpad=0.35,
+        columnspacing=0.9,
+        borderaxespad=0.0,
     )
 
     description = (
-        "%d paired rounds compare intervention payload enabled and disabled. "
-        "The data contain %s. The paired median enabled-minus-disabled "
-        "difference is %.3f microseconds per transaction, with an exact "
-        "%.1f percent nonparametric interval from %.3f to %.3f microseconds."
-    ) % (
-        len(pairs), direction_description, difference_median,
-        interval_coverage * 100.0, interval_low, interval_high)
-    svg_child(root, "desc", {"id": "figure-description"}, description)
-
-    metadata_text = (
-        "source=%s; checkout=%s; run=%s; pairs=%d; transactions_per_sample=%d"
-        % (metadata["source_commit"], metadata["checkout_commit"],
-           metadata["run_url"], len(pairs), transactions)
+        "%d paired rounds; %s transactions per aggregate. Median paired "
+        "difference %.3f microseconds per transaction; exact %.1f percent "
+        "interval %.3f to %.3f microseconds."
+        % (
+            len(pairs),
+            format(int(transactions), ","),
+            difference_median,
+            interval_coverage * 100.0,
+            interval_low,
+            interval_high,
+        )
     )
-    svg_child(root, "metadata", text=metadata_text)
-
-    style = """
-        text {
-            font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\",
-                Helvetica, Arial, sans-serif;
-            fill: #17212B;
-        }
-        .title { font-size: 28px; font-weight: 600; letter-spacing: -0.2px; }
-        .subtitle { font-size: 16px; fill: #596675; }
-        .panel-title { font-size: 18px; font-weight: 600; }
-        .panel-note { font-size: 14px; fill: #596675; }
-        .tick { font-size: 13px; fill: #596675; }
-        .axis-label { font-size: 14px; font-weight: 600; }
-        .category { font-size: 15px; font-weight: 600; }
-        .category-detail { font-size: 14px; fill: #596675; }
-        .round-label { font-size: 12px; fill: #596675; }
-        .summary-label { font-size: 14px; font-weight: 600; }
-        .summary-value { font-size: 15px; font-weight: 600; }
-        .legend { font-size: 13px; fill: #596675; }
-        .footnote { font-size: 13.5px; fill: #596675; }
-        .axis { stroke: #17212B; stroke-width: 1.2; shape-rendering: crispEdges; }
-        .grid { stroke: #DCE3E9; stroke-width: 1; shape-rendering: crispEdges; }
-        .zero { stroke: #596675; stroke-width: 1.5; shape-rendering: crispEdges; }
-        .pair-line { stroke: #8793A1; stroke-width: 1.5; stroke-opacity: 0.55; }
-        .effect-line { stroke: #009E73; stroke-width: 1.5; stroke-opacity: 0.35; }
-        .point { stroke: #FFFFFF; stroke-width: 1.5; }
-        .median-point { stroke: #17212B; stroke-width: 1.5; }
-        .interval { stroke: #17212B; stroke-width: 2.5; }
-        .header-rule { stroke: #DCE3E9; stroke-width: 1; }
-    """
-    svg_child(root, "style", text=style)
-    svg_child(root, "rect", {
-        "x": "0", "y": "0", "width": str(width), "height": str(height),
-        "fill": COLORS["background"],
-    })
-
-    add_text(root, 64, 52,
-        "Intervention log payload cost in a phase-1 deny microbenchmark",
-        "title")
-    add_text(root, 64, 82,
-        "Paired Linux release benchmark · elapsed time per transaction · lower is better",
-        "subtitle")
-
-    add_text(root, 986, 82, "Run order:", "legend")
-    add_marker(root, 1080, 77, "enabled-first", COLORS["pair"], 5.5)
-    add_text(root, 1094, 82, "Enabled first", "legend")
-    add_marker(root, 1223, 77, "disabled-first", COLORS["pair"], 5.5)
-    add_text(root, 1237, 82, "Disabled first", "legend")
-    add_line(root, 64, 108, 1376, 108, "header-rule")
-
-    add_text(root, 64, 150, "A", "panel-title")
-    add_text(root, 91, 150, "Observed elapsed time", "panel-title")
-    add_text(root, 825, 150, "B", "panel-title")
-    add_text(root, 852, 150, "Paired elapsed-time difference", "panel-title")
-    add_text(root, 852, 176,
-        "Enabled − disabled; positive means enabled took longer",
-        "panel-note")
-
-    a_left = 125.0
-    a_right = 690.0
-    a_top = 188.0
-    a_bottom = 646.0
-    enabled_x = 300.0
-    disabled_x = 560.0
-    latency_max = max(25.0, math.ceil(max(enabled_values) / 5.0) * 5.0)
-
-    def latency_y(value):
-        return a_bottom - value / latency_max * (a_bottom - a_top)
-
-    for tick in range(0, int(latency_max) + 1, 5):
-        y = latency_y(float(tick))
-        add_line(root, a_left, y, a_right, y, "grid")
-        add_text(root, a_left - 13, y + 4, str(tick), "tick", "end")
-    add_line(root, a_left, a_top, a_left, a_bottom, "axis")
-    add_line(root, a_left, a_bottom, a_right, a_bottom, "axis")
-    add_text(root, 35, (a_top + a_bottom) / 2.0,
-        "Elapsed time per transaction (µs)", "axis-label", "middle",
-        "rotate(-90 35 %s)" % format_number((a_top + a_bottom) / 2.0))
-
-    for pair in pairs:
-        enabled_y = latency_y(pair["enabled"])
-        disabled_y = latency_y(pair["disabled"])
-        add_line(root, enabled_x, enabled_y, disabled_x, disabled_y,
-            "pair-line")
-    for pair in pairs:
-        add_marker(root, enabled_x, latency_y(pair["enabled"]),
-            pair["order"], COLORS["enabled"])
-        add_marker(root, disabled_x, latency_y(pair["disabled"]),
-            pair["order"], COLORS["disabled"])
-
-    add_diamond(root, enabled_x, latency_y(enabled_median), 9,
-        COLORS["enabled"])
-    add_diamond(root, disabled_x, latency_y(disabled_median), 9,
-        COLORS["disabled"])
-
-    add_text(root, enabled_x, 684, "Payload enabled", "category", "middle")
-    add_text(root, enabled_x, 708, "Median %.2f µs" % enabled_median,
-        "category-detail", "middle")
-    add_text(root, disabled_x, 684, "Payload disabled", "category", "middle")
-    add_text(root, disabled_x, 708, "Median %.2f µs" % disabled_median,
-        "category-detail", "middle")
-    add_text(root, (a_left + a_right) / 2.0, 754,
-        "Condition", "axis-label", "middle")
-
-    b_left = 825.0
-    b_right = 1350.0
-    b_top = 207.0
-    b_bottom = 548.0
-    b_axis_y = 704.0
-    observed_min = min(0.0, min(differences))
-    observed_max = max(0.0, max(differences))
-    tick_step = nice_tick_step(observed_max - observed_min)
-    effect_min = 0.0 if observed_min >= 0.0 else math.floor(
-        (observed_min - tick_step * 0.35) / tick_step) * tick_step
-    effect_max = 0.0 if observed_max <= 0.0 else math.ceil(
-        (observed_max + tick_step * 0.35) / tick_step) * tick_step
-    if effect_min == effect_max:
-        effect_max = effect_min + tick_step
-
-    def effect_x(value):
-        return b_left + (value - effect_min) / (effect_max - effect_min) \
-            * (b_right - b_left)
-
-    first_tick = int(math.ceil(effect_min / tick_step - 1e-9))
-    last_tick = int(math.floor(effect_max / tick_step + 1e-9))
-    for tick_index in range(first_tick, last_tick + 1):
-        tick = tick_index * tick_step
-        x = effect_x(tick)
-        add_line(root, x, b_top - 11, x, b_axis_y, "grid")
-        add_text(root, x, b_axis_y + 23, format_number(tick), "tick", "middle")
-    add_line(root, effect_x(0.0), b_top - 11, effect_x(0.0), b_axis_y,
-        "zero")
-    add_line(root, b_left, b_axis_y, b_right, b_axis_y, "axis")
-
-    row_step = (b_bottom - b_top) / max(1, len(pairs) - 1)
-    for index, pair in enumerate(pairs):
-        y = b_top + index * row_step
-        x = effect_x(pair["difference"])
-        add_text(root, b_left - 16, y + 4, "R%d" % pair["round"],
-            "round-label", "end")
-        add_line(root, effect_x(0.0), y, x, y, "effect-line")
-        add_marker(root, x, y, pair["order"], COLORS["effect"], 6.0)
-
-    summary_y = 633.0
-    interval_x_low = effect_x(interval_low)
-    interval_x_high = effect_x(interval_high)
-    median_x = effect_x(difference_median)
-    add_text(root, b_left - 16, summary_y + 5, "Median", "summary-label", "end")
-    add_line(root, interval_x_low, summary_y, interval_x_high, summary_y,
-        "interval")
-    add_line(root, interval_x_low, summary_y - 8, interval_x_low,
-        summary_y + 8, "interval")
-    add_line(root, interval_x_high, summary_y - 8, interval_x_high,
-        summary_y + 8, "interval")
-    add_diamond(root, median_x, summary_y, 9, COLORS["effect"])
-    add_text(root, median_x, summary_y + 35,
-        "%.2f µs  [%.2f, %.2f]" % (
-            difference_median, interval_low, interval_high),
-        "summary-value", "middle")
-    if interval_coverage >= 0.95:
-        interval_caption = "median · exact %.1f%% within-run CI" \
-            % (interval_coverage * 100.0)
-    else:
-        interval_caption = "median · exact %.1f%% within-run interval" \
-            % (interval_coverage * 100.0)
-    add_text(root, median_x, summary_y + 56,
-        interval_caption, "round-label", "middle")
-    add_text(root, (b_left + b_right) / 2.0, 754,
-        "Enabled − disabled elapsed time (µs / transaction)",
-        "axis-label", "middle")
-
-    total_transactions = len(pairs) * 2 * transactions
-    add_text(root, 64, 816,
-        ("%d paired sample aggregates · %s transactions/sample · %s/mode · "
-         "%s timed total · alternating execution order")
-        % (len(pairs), format_integer(transactions),
-           format_integer(len(pairs) * transactions),
-           format_integer(total_transactions)),
-        "footnote")
-    direction_counts = "%d positive · %d negative" % (
-        positive_count, negative_count)
-    if zero_count:
-        direction_counts += " · %d zero" % zero_count
-    add_text(root, 64, 847,
-        ("Paired median enabled − disabled: %.2f µs; median paired relative "
-         "difference: %.2f%% · %s.")
-        % (difference_median, reduction_median, direction_counts),
-        "footnote")
-    if interval_coverage >= 0.95:
-        coverage_note = "closest available ≥95%"
-    else:
-        coverage_note = "maximum attainable with n=%d" % len(pairs)
-    add_text(root, 64, 878,
-        ("Within-run exact interval: %.1f%% [%.2f, %.2f] µs (%s); assumes "
-         "independent paired rounds, which are the statistical units.")
-        % (interval_coverage * 100.0, interval_low, interval_high,
-           coverage_note),
-        "footnote")
-
-    environment = metadata["environment"] or "environment not recorded"
-    run_label = metadata["run_url"].rstrip("/").split("/")[-1]
-    revision_line = (
-        "Actions run %s · source %s · %s · descriptive for this fixture; "
-        "not a cross-host or cross-workload estimate."
-        % (run_label, short_revision(metadata["source_commit"]),
-           environment)
+    svg_buffer = io.BytesIO()
+    figure.savefig(
+        svg_buffer,
+        format="svg",
+        metadata={
+            "Title": "Paired phase-1 deny benchmark",
+            "Description": description,
+            "Creator": "Matplotlib %s" % matplotlib.__version__,
+            "Date": None,
+        },
     )
-    add_text(root, 64, 909, revision_line, "footnote")
+    plt.close(figure)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    tree = ET.ElementTree(root)
-    if hasattr(ET, "indent"):
-        ET.indent(tree, space="  ")
-    tree.write(output_path, encoding="utf-8", xml_declaration=True)
-    with output_path.open("ab") as stream:
-        stream.write(b"\n")
+    output_path.write_bytes(add_accessibility_metadata(
+        svg_buffer.getvalue(), pairs, statistics_summary, metadata))
 
-
-def format_integer(value):
-    return format(int(value), ",")
+    return {
+        "enabled_median": enabled_median,
+        "disabled_median": disabled_median,
+        "difference_median": difference_median,
+        "reduction_median": reduction_median,
+        "interval_low": interval_low,
+        "interval_high": interval_high,
+        "interval_coverage": interval_coverage,
+    }
 
 
 def build_metadata(arguments):
@@ -567,10 +562,21 @@ def parse_arguments():
 
 def main():
     arguments = parse_arguments()
+    if arguments.output.suffix.lower() != ".svg":
+        raise ValueError("The output path must use the .svg extension")
     pairs, transactions = read_pairs(arguments.input)
     metadata = build_metadata(arguments)
-    render_figure(pairs, transactions, arguments.output, metadata)
-    print("Rendered %s from %d paired rounds" % (arguments.output, len(pairs)))
+    summary = render_figure(pairs, transactions, arguments.output, metadata)
+    print(
+        "Rendered %s from %d paired rounds with Matplotlib %s "
+        "(median difference %.3f µs)"
+        % (
+            arguments.output,
+            len(pairs),
+            matplotlib.__version__,
+            summary["difference_median"],
+        )
+    )
 
 
 if __name__ == "__main__":
