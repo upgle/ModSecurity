@@ -107,6 +107,19 @@ jobs:
             | tee benchmark-results/summary.md
           cat benchmark-results/summary.md >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Render paired estimation plot
+        env:
+          BENCHMARK_RUN_URL: >-
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 test/benchmark/plot_intervention_log_benchmark.py \
+            --input benchmark-results/intervention-log.csv \
+            --output benchmark-results/intervention-log.svg \
+            --metadata-directory benchmark-results \
+            --run-url "$BENCHMARK_RUN_URL" \
+            --environment-label "Ubuntu 24.04" \
+            --build-label "Release (-O3, NDEBUG)"
+
       - name: Upload benchmark evidence
         if: always()
         uses: actions/upload-artifact@v6

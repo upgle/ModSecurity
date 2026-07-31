@@ -1,0 +1,173 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="920" viewBox="0 0 1440 920" role="img" aria-labelledby="figure-title figure-description">
+  <title id="figure-title">Intervention log payload cost in a phase-1 deny microbenchmark</title>
+  <desc id="figure-description">12 paired rounds compare intervention payload enabled and disabled. The data contain 12 positive, 0 negative, and 0 zero paired differences. The paired median enabled-minus-disabled difference is 5.418 microseconds per transaction, with an exact 96.1 percent nonparametric interval from 5.381 to 5.480 microseconds.</desc>
+  <metadata>source=61adf73bf66e3e0b07db8b82ce80ac76e7dfa950; checkout=9a87c550ef68856da3bbf136718f60a2f48fabb6; run=https://github.com/upgle/ModSecurity/actions/runs/30621986766; pairs=12; transactions_per_sample=50000</metadata>
+  <style>
+        text {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                Helvetica, Arial, sans-serif;
+            fill: #17212B;
+        }
+        .title { font-size: 28px; font-weight: 600; letter-spacing: -0.2px; }
+        .subtitle { font-size: 16px; fill: #596675; }
+        .panel-title { font-size: 18px; font-weight: 600; }
+        .panel-note { font-size: 14px; fill: #596675; }
+        .tick { font-size: 13px; fill: #596675; }
+        .axis-label { font-size: 14px; font-weight: 600; }
+        .category { font-size: 15px; font-weight: 600; }
+        .category-detail { font-size: 14px; fill: #596675; }
+        .round-label { font-size: 12px; fill: #596675; }
+        .summary-label { font-size: 14px; font-weight: 600; }
+        .summary-value { font-size: 15px; font-weight: 600; }
+        .legend { font-size: 13px; fill: #596675; }
+        .footnote { font-size: 13.5px; fill: #596675; }
+        .axis { stroke: #17212B; stroke-width: 1.2; shape-rendering: crispEdges; }
+        .grid { stroke: #DCE3E9; stroke-width: 1; shape-rendering: crispEdges; }
+        .zero { stroke: #596675; stroke-width: 1.5; shape-rendering: crispEdges; }
+        .pair-line { stroke: #8793A1; stroke-width: 1.5; stroke-opacity: 0.55; }
+        .effect-line { stroke: #009E73; stroke-width: 1.5; stroke-opacity: 0.35; }
+        .point { stroke: #FFFFFF; stroke-width: 1.5; }
+        .median-point { stroke: #17212B; stroke-width: 1.5; }
+        .interval { stroke: #17212B; stroke-width: 2.5; }
+        .header-rule { stroke: #DCE3E9; stroke-width: 1; }
+    </style>
+  <rect x="0" y="0" width="1440" height="920" fill="#FFFFFF" />
+  <text x="64" y="52" class="title">Intervention log payload cost in a phase-1 deny microbenchmark</text>
+  <text x="64" y="82" class="subtitle">Paired Linux release benchmark · elapsed time per transaction · lower is better</text>
+  <text x="986" y="82" class="legend">Run order:</text>
+  <circle class="point" fill="#8793A1" cx="1080" cy="77" r="5.5" />
+  <text x="1094" y="82" class="legend">Enabled first</text>
+  <polygon class="point" fill="#8793A1" points="1223,70.521 1217.5,80.971 1228.5,80.971" />
+  <text x="1237" y="82" class="legend">Disabled first</text>
+  <line x1="64" y1="108" x2="1376" y2="108" class="header-rule" />
+  <text x="64" y="150" class="panel-title">A</text>
+  <text x="91" y="150" class="panel-title">Observed elapsed time</text>
+  <text x="825" y="150" class="panel-title">B</text>
+  <text x="852" y="150" class="panel-title">Paired elapsed-time difference</text>
+  <text x="852" y="176" class="panel-note">Enabled − disabled; positive means enabled took longer</text>
+  <line x1="125" y1="646" x2="690" y2="646" class="grid" />
+  <text x="112" y="650" class="tick" text-anchor="end">0</text>
+  <line x1="125" y1="554.4" x2="690" y2="554.4" class="grid" />
+  <text x="112" y="558.4" class="tick" text-anchor="end">5</text>
+  <line x1="125" y1="462.8" x2="690" y2="462.8" class="grid" />
+  <text x="112" y="466.8" class="tick" text-anchor="end">10</text>
+  <line x1="125" y1="371.2" x2="690" y2="371.2" class="grid" />
+  <text x="112" y="375.2" class="tick" text-anchor="end">15</text>
+  <line x1="125" y1="279.6" x2="690" y2="279.6" class="grid" />
+  <text x="112" y="283.6" class="tick" text-anchor="end">20</text>
+  <line x1="125" y1="188" x2="690" y2="188" class="grid" />
+  <text x="112" y="192" class="tick" text-anchor="end">25</text>
+  <line x1="125" y1="188" x2="125" y2="646" class="axis" />
+  <line x1="125" y1="646" x2="690" y2="646" class="axis" />
+  <text x="35" y="417" class="axis-label" text-anchor="middle" transform="rotate(-90 35 417)">Elapsed time per transaction (µs)</text>
+  <line x1="300" y1="244.222" x2="560" y2="359.775" class="pair-line" />
+  <line x1="300" y1="264.386" x2="560" y2="355.569" class="pair-line" />
+  <line x1="300" y1="274.434" x2="560" y2="374.318" class="pair-line" />
+  <line x1="300" y1="274.801" x2="560" y2="372.563" class="pair-line" />
+  <line x1="300" y1="274.748" x2="560" y2="374.129" class="pair-line" />
+  <line x1="300" y1="273.874" x2="560" y2="374.276" class="pair-line" />
+  <line x1="300" y1="275.108" x2="560" y2="374.148" class="pair-line" />
+  <line x1="300" y1="275.308" x2="560" y2="374.429" class="pair-line" />
+  <line x1="300" y1="274.465" x2="560" y2="374.396" class="pair-line" />
+  <line x1="300" y1="275.393" x2="560" y2="373.971" class="pair-line" />
+  <line x1="300" y1="274.396" x2="560" y2="374.823" class="pair-line" />
+  <line x1="300" y1="274.383" x2="560" y2="373.08" class="pair-line" />
+  <circle class="point" fill="#D55E00" cx="300" cy="244.222" r="6" />
+  <circle class="point" fill="#0072B2" cx="560" cy="359.775" r="6" />
+  <polygon class="point" fill="#D55E00" points="300,257.318 294,268.718 306,268.718" />
+  <polygon class="point" fill="#0072B2" points="560,348.501 554,359.901 566,359.901" />
+  <circle class="point" fill="#D55E00" cx="300" cy="274.434" r="6" />
+  <circle class="point" fill="#0072B2" cx="560" cy="374.318" r="6" />
+  <polygon class="point" fill="#D55E00" points="300,267.733 294,279.133 306,279.133" />
+  <polygon class="point" fill="#0072B2" points="560,365.495 554,376.895 566,376.895" />
+  <circle class="point" fill="#D55E00" cx="300" cy="274.748" r="6" />
+  <circle class="point" fill="#0072B2" cx="560" cy="374.129" r="6" />
+  <polygon class="point" fill="#D55E00" points="300,266.806 294,278.206 306,278.206" />
+  <polygon class="point" fill="#0072B2" points="560,367.208 554,378.608 566,378.608" />
+  <circle class="point" fill="#D55E00" cx="300" cy="275.108" r="6" />
+  <circle class="point" fill="#0072B2" cx="560" cy="374.148" r="6" />
+  <polygon class="point" fill="#D55E00" points="300,268.24 294,279.64 306,279.64" />
+  <polygon class="point" fill="#0072B2" points="560,367.361 554,378.761 566,378.761" />
+  <circle class="point" fill="#D55E00" cx="300" cy="274.465" r="6" />
+  <circle class="point" fill="#0072B2" cx="560" cy="374.396" r="6" />
+  <polygon class="point" fill="#D55E00" points="300,268.325 294,279.725 306,279.725" />
+  <polygon class="point" fill="#0072B2" points="560,366.903 554,378.303 566,378.303" />
+  <circle class="point" fill="#D55E00" cx="300" cy="274.396" r="6" />
+  <circle class="point" fill="#0072B2" cx="560" cy="374.823" r="6" />
+  <polygon class="point" fill="#D55E00" points="300,267.315 294,278.715 306,278.715" />
+  <polygon class="point" fill="#0072B2" points="560,366.012 554,377.412 566,377.412" />
+  <polygon points="300,265.449 309,274.449 300,283.449 291,274.449" class="median-point" fill="#D55E00" />
+  <polygon points="560,365.139 569,374.139 560,383.139 551,374.139" class="median-point" fill="#0072B2" />
+  <text x="300" y="684" class="category" text-anchor="middle">Payload enabled</text>
+  <text x="300" y="708" class="category-detail" text-anchor="middle">Median 20.28 µs</text>
+  <text x="560" y="684" class="category" text-anchor="middle">Payload disabled</text>
+  <text x="560" y="708" class="category-detail" text-anchor="middle">Median 14.84 µs</text>
+  <text x="407.5" y="754" class="axis-label" text-anchor="middle">Condition</text>
+  <line x1="825" y1="196" x2="825" y2="704" class="grid" />
+  <text x="825" y="727" class="tick" text-anchor="middle">0</text>
+  <line x1="900" y1="196" x2="900" y2="704" class="grid" />
+  <text x="900" y="727" class="tick" text-anchor="middle">1</text>
+  <line x1="975" y1="196" x2="975" y2="704" class="grid" />
+  <text x="975" y="727" class="tick" text-anchor="middle">2</text>
+  <line x1="1050" y1="196" x2="1050" y2="704" class="grid" />
+  <text x="1050" y="727" class="tick" text-anchor="middle">3</text>
+  <line x1="1125" y1="196" x2="1125" y2="704" class="grid" />
+  <text x="1125" y="727" class="tick" text-anchor="middle">4</text>
+  <line x1="1200" y1="196" x2="1200" y2="704" class="grid" />
+  <text x="1200" y="727" class="tick" text-anchor="middle">5</text>
+  <line x1="1275" y1="196" x2="1275" y2="704" class="grid" />
+  <text x="1275" y="727" class="tick" text-anchor="middle">6</text>
+  <line x1="1350" y1="196" x2="1350" y2="704" class="grid" />
+  <text x="1350" y="727" class="tick" text-anchor="middle">7</text>
+  <line x1="825" y1="196" x2="825" y2="704" class="zero" />
+  <line x1="825" y1="704" x2="1350" y2="704" class="axis" />
+  <text x="809" y="211" class="round-label" text-anchor="end">R1</text>
+  <line x1="825" y1="207" x2="1298.063" y2="207" class="effect-line" />
+  <circle class="point" fill="#009E73" cx="1298.063" cy="207" r="6" />
+  <text x="809" y="242" class="round-label" text-anchor="end">R2</text>
+  <line x1="825" y1="238" x2="1198.292" y2="238" class="effect-line" />
+  <polygon class="point" fill="#009E73" points="1198.292,230.932 1192.292,242.332 1204.292,242.332" />
+  <text x="809" y="273" class="round-label" text-anchor="end">R3</text>
+  <line x1="825" y1="269" x2="1233.916" y2="269" class="effect-line" />
+  <circle class="point" fill="#009E73" cx="1233.916" cy="269" r="6" />
+  <text x="809" y="304" class="round-label" text-anchor="end">R4</text>
+  <line x1="825" y1="300" x2="1225.226" y2="300" class="effect-line" />
+  <polygon class="point" fill="#009E73" points="1225.226,292.932 1219.226,304.332 1231.226,304.332" />
+  <text x="809" y="335" class="round-label" text-anchor="end">R5</text>
+  <line x1="825" y1="331" x2="1231.855" y2="331" class="effect-line" />
+  <circle class="point" fill="#009E73" cx="1231.855" cy="331" r="6" />
+  <text x="809" y="366" class="round-label" text-anchor="end">R6</text>
+  <line x1="825" y1="362" x2="1236.034" y2="362" class="effect-line" />
+  <polygon class="point" fill="#009E73" points="1236.034,354.932 1230.034,366.332 1242.034,366.332" />
+  <text x="809" y="397" class="round-label" text-anchor="end">R7</text>
+  <line x1="825" y1="393" x2="1230.457" y2="393" class="effect-line" />
+  <circle class="point" fill="#009E73" cx="1230.457" cy="393" r="6" />
+  <text x="809" y="428" class="round-label" text-anchor="end">R8</text>
+  <line x1="825" y1="424" x2="1230.791" y2="424" class="effect-line" />
+  <polygon class="point" fill="#009E73" points="1230.791,416.932 1224.791,428.332 1236.791,428.332" />
+  <text x="809" y="459" class="round-label" text-anchor="end">R9</text>
+  <line x1="825" y1="455" x2="1234.105" y2="455" class="effect-line" />
+  <circle class="point" fill="#009E73" cx="1234.105" cy="455" r="6" />
+  <text x="809" y="490" class="round-label" text-anchor="end">R10</text>
+  <line x1="825" y1="486" x2="1228.566" y2="486" class="effect-line" />
+  <polygon class="point" fill="#009E73" points="1228.566,478.932 1222.566,490.332 1234.566,490.332" />
+  <text x="809" y="521" class="round-label" text-anchor="end">R11</text>
+  <line x1="825" y1="517" x2="1236.139" y2="517" class="effect-line" />
+  <circle class="point" fill="#009E73" cx="1236.139" cy="517" r="6" />
+  <text x="809" y="552" class="round-label" text-anchor="end">R12</text>
+  <line x1="825" y1="548" x2="1229.055" y2="548" class="effect-line" />
+  <polygon class="point" fill="#009E73" points="1229.055,540.932 1223.055,552.332 1235.055,552.332" />
+  <text x="809" y="638" class="summary-label" text-anchor="end">Median</text>
+  <line x1="1228.566" y1="633" x2="1236.034" y2="633" class="interval" />
+  <line x1="1228.566" y1="625" x2="1228.566" y2="641" class="interval" />
+  <line x1="1236.034" y1="625" x2="1236.034" y2="641" class="interval" />
+  <polygon points="1231.323,624 1240.323,633 1231.323,642 1222.323,633" class="median-point" fill="#009E73" />
+  <text x="1231.323" y="668" class="summary-value" text-anchor="middle">5.42 µs  [5.38, 5.48]</text>
+  <text x="1231.323" y="689" class="round-label" text-anchor="middle">median · exact 96.1% within-run CI</text>
+  <text x="1087.5" y="754" class="axis-label" text-anchor="middle">Enabled − disabled elapsed time (µs / transaction)</text>
+  <text x="64" y="816" class="footnote">12 paired sample aggregates · 50,000 transactions/sample · 600,000/mode · 1,200,000 timed total · alternating execution order</text>
+  <text x="64" y="847" class="footnote">Paired median enabled − disabled: 5.42 µs; median paired relative difference: 26.75% · 12 positive · 0 negative.</text>
+  <text x="64" y="878" class="footnote">Within-run exact interval: 96.1% [5.38, 5.48] µs (closest available ≥95%); assumes independent paired rounds, which are the statistical units.</text>
+  <text x="64" y="909" class="footnote">Actions run 30621986766 · source 61adf73 · Ubuntu 24.04 · AMD EPYC 9V74 (4 vCPU) · GCC 13.3.0 · Release (-O3, NDEBUG) · descriptive for this fixture; not a cross-host or cross-workload estimate.</text>
+</svg>
