@@ -1,0 +1,113 @@
+name: Intervention Log Validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/intervention-log-validation.yml"
+      - "examples/simple_example_using_c/**"
+      - "headers/modsecurity/modsecurity.h"
+      - "src/actions/disruptive/**"
+      - "src/intervention_log.h"
+      - "src/modsecurity.cc"
+      - "src/transaction.cc"
+      - "test/benchmark/**"
+      - "test/common/**"
+      - "test/regression/**"
+      - "test/test-cases/regression/intervention-log.json"
+      - "test/test-suite.in"
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: Transactions per sample
+        required: true
+        default: "50000"
+        type: string
+      rounds:
+        description: Paired rounds; use an even value to balance run order
+        required: true
+        default: "12"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: intervention-log-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-release:
+    name: Linux release build, regression, and benchmark
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            autoconf \
+            automake \
+            bison \
+            build-essential \
+            flex \
+            libpcre2-dev \
+            libtool \
+            libtool-bin \
+            libxml2-dev \
+            libyajl-dev \
+            pkg-config
+
+      - name: Configure release build
+        env:
+          CFLAGS: -O3 -DNDEBUG
+          CXXFLAGS: -O3 -DNDEBUG
+        run: |
+          ./build.sh
+          ./configure \
+            --disable-assertions \
+            --disable-dependency-tracking \
+            --without-curl \
+            --without-geoip \
+            --without-lmdb \
+            --without-lua \
+            --without-maxmind \
+            --without-ssdeep
+
+      - name: Build
+        run: make -j "$(nproc)"
+
+      - name: Run intervention log regression tests
+        run: make check TESTS=test/test-cases/regression/intervention-log.json
+
+      - name: Record runner metadata
+        run: |
+          mkdir -p benchmark-results
+          git rev-parse HEAD > benchmark-results/commit.txt
+          uname -a > benchmark-results/uname.txt
+          lscpu > benchmark-results/lscpu.txt
+          g++ --version > benchmark-results/compiler.txt
+
+      - name: Run paired release benchmark
+        env:
+          BENCHMARK_ITERATIONS: ${{ inputs.iterations || '50000' }}
+          BENCHMARK_ROUNDS: ${{ inputs.rounds || '12' }}
+        run: |
+          ./test/benchmark/intervention_log_benchmark \
+            "$BENCHMARK_ITERATIONS" \
+            "$BENCHMARK_ROUNDS" \
+            benchmark-results/intervention-log.csv \
+            | tee benchmark-results/summary.md
+          cat benchmark-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: intervention-log-benchmark-${{ github.run_id }}
+          path: benchmark-results/
+          retention-days: 30

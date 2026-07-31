@@ -1,6 +1,6 @@
 
 
-noinst_PROGRAMS = benchmark
+noinst_PROGRAMS = benchmark intervention_log_benchmark
 
 benchmark_SOURCES = \
         benchmark.cc
@@ -40,6 +40,17 @@ benchmark_CPPFLAGS = \
 	$(LMDB_CFLAGS) \
 	$(LIBXML2_CFLAGS)
 
+intervention_log_benchmark_SOURCES = \
+	intervention_log_benchmark.cc
+
+intervention_log_benchmark_LDADD = \
+	$(benchmark_LDADD)
+
+intervention_log_benchmark_LDFLAGS = \
+	$(benchmark_LDFLAGS)
+
+intervention_log_benchmark_CPPFLAGS = \
+	$(benchmark_CPPFLAGS)
+
 MAINTAINERCLEANFILES = \
         Makefile.in
-
