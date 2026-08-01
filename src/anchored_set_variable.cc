@@ -31,9 +31,7 @@ namespace modsecurity {
 AnchoredSetVariable::AnchoredSetVariable(Transaction *t,
     const std::string &name)
     : m_transaction(t),
-    m_name(name) {
-        reserve(10);
-    }
+    m_name(name) { }
 
 
 AnchoredSetVariable::~AnchoredSetVariable() {
@@ -52,6 +50,9 @@ void AnchoredSetVariable::unset() {
 
 void AnchoredSetVariable::set(const std::string &key,
     const std::string &value, size_t offset, size_t len) {
+    if (empty()) {
+        reserve(10);
+    }
     VariableValue *var = new VariableValue(&m_name, &key, &value);
     var->addOrigin(len, offset);
     emplace(key, var);
@@ -60,6 +61,9 @@ void AnchoredSetVariable::set(const std::string &key,
 
 void AnchoredSetVariable::set(const std::string &key,
     const std::string &value, size_t offset) {
+    if (empty()) {
+        reserve(10);
+    }
     VariableValue *var = new VariableValue(&m_name, &key, &value);
     var->addOrigin(value.size(), offset);
     emplace(key, var);
