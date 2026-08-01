@@ -27,7 +27,6 @@ import matplotlib
 matplotlib.use("svg")
 
 from matplotlib import pyplot as plt  # noqa: E402
-from matplotlib.lines import Line2D  # noqa: E402
 
 
 SVG_NAMESPACE = "http://www.w3.org/2000/svg"
@@ -46,10 +45,7 @@ COLORS = {
     "disabled": "#2C7FB8",
 }
 
-ORDER_MARKERS = {
-    "enabled-first": "o",
-    "disabled-first": "^",
-}
+EXECUTION_ORDERS = ("enabled-first", "disabled-first")
 
 
 def parse_metadata_file(path, prefix):
@@ -88,7 +84,7 @@ def read_pairs(csv_path):
             if round_number <= 0:
                 raise ValueError("Round numbers must be positive")
             order = row["order"]
-            if order not in ORDER_MARKERS:
+            if order not in EXECUTION_ORDERS:
                 raise ValueError("Unexpected execution order: %s" % order)
             transactions = int(row["transactions"])
             if transactions <= 0:
@@ -255,7 +251,7 @@ def render_figure(pairs, transactions, output_path, metadata):
 
     figure, time_axis = plt.subplots(figsize=(5.8, 3.65))
     figure.subplots_adjust(
-        left=0.14, right=0.97, bottom=0.26, top=0.82)
+        left=0.14, right=0.97, bottom=0.26, top=0.9)
 
     for pair in pairs:
         time_axis.plot(
@@ -266,28 +262,26 @@ def render_figure(pairs, transactions, output_path, metadata):
             zorder=1,
         )
 
-    for order, marker in ORDER_MARKERS.items():
-        selected = [pair for pair in pairs if pair["order"] == order]
-        time_axis.scatter(
-            [0.0] * len(selected),
-            [pair["enabled"] for pair in selected],
-            marker=marker,
-            s=24,
-            facecolor=COLORS["enabled"],
-            edgecolor="white",
-            linewidth=0.45,
-            zorder=2,
-        )
-        time_axis.scatter(
-            [1.0] * len(selected),
-            [pair["disabled"] for pair in selected],
-            marker=marker,
-            s=24,
-            facecolor=COLORS["disabled"],
-            edgecolor="white",
-            linewidth=0.45,
-            zorder=2,
-        )
+    time_axis.scatter(
+        [0.0] * len(pairs),
+        enabled_values,
+        marker="o",
+        s=24,
+        facecolor=COLORS["enabled"],
+        edgecolor="white",
+        linewidth=0.45,
+        zorder=2,
+    )
+    time_axis.scatter(
+        [1.0] * len(pairs),
+        disabled_values,
+        marker="o",
+        s=24,
+        facecolor=COLORS["disabled"],
+        edgecolor="white",
+        linewidth=0.45,
+        zorder=2,
+    )
 
     for x_value, median_value, label_offset, alignment in (
         (0.0, enabled_median, -0.19, "right"),
@@ -322,32 +316,6 @@ def render_figure(pairs, transactions, output_path, metadata):
     time_axis.tick_params(axis="x", length=0, pad=5)
     style_axis(time_axis)
 
-    legend_handles = [
-        Line2D(
-            [], [],
-            linestyle="none",
-            marker=marker,
-            markersize=4.2,
-            markerfacecolor=COLORS["text"],
-            markeredgecolor="white",
-            markeredgewidth=0.45,
-            label=label,
-        )
-        for marker, label in (
-            ("o", "enabled measured first"),
-            ("^", "disabled measured first"),
-        )
-    ]
-    figure.legend(
-        handles=legend_handles,
-        loc="upper right",
-        bbox_to_anchor=(0.99, 0.985),
-        frameon=False,
-        ncol=2,
-        handletextpad=0.35,
-        columnspacing=0.9,
-        borderaxespad=0.0,
-    )
     figure.text(
         0.5,
         0.115,
