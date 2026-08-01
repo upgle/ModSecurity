@@ -44,26 +44,12 @@ COLORS = {
     "pair": "#BDBDBD",
     "enabled": "#595959",
     "disabled": "#2C7FB8",
-    "effect": "#222222",
-    "zero": "#8C8C8C",
 }
 
 ORDER_MARKERS = {
     "enabled-first": "o",
     "disabled-first": "^",
 }
-
-
-def nice_tick_step(span, target_ticks=5):
-    if span <= 0:
-        return 1.0
-    rough_step = span / float(target_ticks)
-    magnitude = 10.0 ** math.floor(math.log10(rough_step))
-    for multiplier in (1.0, 2.0, 5.0, 10.0):
-        candidate = multiplier * magnitude
-        if candidate >= rough_step:
-            return candidate
-    return 10.0 * magnitude
 
 
 def parse_metadata_file(path, prefix):
@@ -197,20 +183,6 @@ def style_axis(axis):
     axis.spines["right"].set_visible(False)
 
 
-def effect_limits(differences):
-    observed_min = min(differences)
-    observed_max = max(differences)
-    data_span = observed_max - observed_min
-    padding = max(0.25, data_span * 0.12)
-    lower = min(0.0, observed_min) - padding
-    upper = max(0.0, observed_max) + padding
-    tick_step = nice_tick_step(upper - lower)
-    first_tick = int(math.ceil(lower / tick_step - 1e-9))
-    last_tick = int(math.floor(upper / tick_step + 1e-9))
-    ticks = [index * tick_step for index in range(first_tick, last_tick + 1)]
-    return lower, upper, ticks
-
-
 def add_accessibility_metadata(svg_bytes, pairs, statistics_summary, metadata):
     root = ET.fromstring(svg_bytes)
     title_id = "figure-title"
@@ -281,14 +253,9 @@ def render_figure(pairs, transactions, output_path, metadata):
         "interval_coverage": interval_coverage,
     }
 
-    figure, (time_axis, effect_axis) = plt.subplots(
-        1,
-        2,
-        figsize=(7.2, 3.45),
-        gridspec_kw={"width_ratios": (0.44, 0.56)},
-    )
+    figure, time_axis = plt.subplots(figsize=(5.8, 3.65))
     figure.subplots_adjust(
-        left=0.095, right=0.99, bottom=0.21, top=0.86, wspace=0.34)
+        left=0.14, right=0.97, bottom=0.26, top=0.82)
 
     for pair in pairs:
         time_axis.plot(
@@ -344,88 +311,16 @@ def render_figure(pairs, transactions, output_path, metadata):
         )
 
     latency_max = max(25.0, math.ceil(max(enabled_values) / 5.0) * 5.0)
-    time_axis.set_xlim(-0.48, 1.48)
+    time_axis.set_xlim(-0.4, 1.4)
     time_axis.set_ylim(0.0, latency_max)
-    time_axis.set_xticks((0.0, 1.0), ("Payload\nenabled", "Payload\ndisabled"))
+    time_axis.set_xticks((0.0, 1.0), ("Payload enabled", "Payload disabled"))
     time_axis.set_yticks(
         [float(value) for value in range(0, int(latency_max) + 1, 5)])
-    time_axis.set_ylabel("Sample mean time\n(µs/transaction)")
-    time_axis.set_title("A   Sample means", loc="left", pad=7.0)
+    time_axis.set_ylabel("Sample mean time (µs/transaction)")
+    time_axis.set_title("Phase-1 deny processing time", loc="left", pad=7.0)
     time_axis.grid(axis="y", color=COLORS["grid"], linewidth=0.45)
     time_axis.tick_params(axis="x", length=0, pad=5)
     style_axis(time_axis)
-
-    y_positions = list(range(len(pairs), 0, -1))
-    for order, marker in ORDER_MARKERS.items():
-        selected = [
-            (position, pair)
-            for position, pair in zip(y_positions, pairs)
-            if pair["order"] == order
-        ]
-        effect_axis.scatter(
-            [pair["difference"] for _, pair in selected],
-            [position for position, _ in selected],
-            marker=marker,
-            s=25,
-            facecolor=COLORS["effect"],
-            edgecolor="white",
-            linewidth=0.45,
-            zorder=3,
-        )
-
-    summary_y = -0.25
-    effect_axis.axvline(
-        0.0,
-        color=COLORS["zero"],
-        linewidth=0.65,
-        linestyle=(0, (3, 2)),
-        zorder=1,
-    )
-    effect_axis.axhline(
-        0.38, color=COLORS["grid"], linewidth=0.5, zorder=1)
-    effect_axis.errorbar(
-        difference_median,
-        summary_y,
-        xerr=(
-            (difference_median - interval_low,),
-            (interval_high - difference_median,),
-        ),
-        fmt="s",
-        markersize=4.0,
-        markerfacecolor=COLORS["effect"],
-        markeredgecolor=COLORS["effect"],
-        ecolor=COLORS["effect"],
-        elinewidth=1.15,
-        capsize=2.5,
-        capthick=1.0,
-        zorder=4,
-    )
-    effect_axis.annotate(
-        "%.2f  [%.2f, %.2f]" % (
-            difference_median, interval_low, interval_high),
-        xy=(difference_median, summary_y),
-        xytext=(0, 5),
-        textcoords="offset points",
-        ha="center",
-        va="bottom",
-        fontsize=6.8,
-        color=COLORS["text"],
-    )
-
-    effect_min, effect_max, effect_ticks = effect_limits(differences)
-    effect_axis.set_xlim(effect_min, effect_max)
-    effect_axis.set_xticks(effect_ticks)
-    effect_axis.set_ylim(-1.35, len(pairs) + 0.65)
-    effect_axis.set_yticks(
-        y_positions + [summary_y],
-        ["R%d" % pair["round"] for pair in pairs] + ["Median"],
-    )
-    effect_axis.set_xlabel(
-        "Difference in sample mean\n(enabled − disabled, µs/transaction)")
-    effect_axis.set_title("B   Paired differences by round", loc="left", pad=7.0)
-    effect_axis.grid(axis="x", color=COLORS["grid"], linewidth=0.45)
-    effect_axis.tick_params(axis="y", length=0, pad=4)
-    style_axis(effect_axis)
 
     legend_handles = [
         Line2D(
@@ -433,7 +328,7 @@ def render_figure(pairs, transactions, output_path, metadata):
             linestyle="none",
             marker=marker,
             markersize=4.2,
-            markerfacecolor=COLORS["effect"],
+            markerfacecolor=COLORS["text"],
             markeredgecolor="white",
             markeredgewidth=0.45,
             label=label,
@@ -452,6 +347,27 @@ def render_figure(pairs, transactions, output_path, metadata):
         handletextpad=0.35,
         columnspacing=0.9,
         borderaxespad=0.0,
+    )
+    figure.text(
+        0.5,
+        0.115,
+        ("Median paired difference (enabled − disabled): "
+         "%.2f µs/transaction") % difference_median,
+        ha="center",
+        va="center",
+        fontsize=7.3,
+        color=COLORS["text"],
+    )
+    figure.text(
+        0.5,
+        0.06,
+        ("Exact within-run 95%% CI: %.2f–%.2f µs/transaction · "
+         "n=%d paired rounds") % (
+            interval_low, interval_high, len(pairs)),
+        ha="center",
+        va="center",
+        fontsize=6.8,
+        color=COLORS["muted"],
     )
 
     description = (

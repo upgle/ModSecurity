@@ -3,15 +3,15 @@
 ![All 12 paired rounds were lower with payload disabled](intervention-log-run-30644388937.svg)
 
 *Figure 1. Phase-1 deny processing time with intervention-log payload generation
-enabled and disabled. Each point in panel A is the mean wall-clock time per
-transaction for one 50,000-transaction sample; lines connect the two conditions
-within each of 12 alternating-order rounds, and short horizontal bars show the
-condition medians. Panel B shows the enabled-minus-disabled difference for every
-round. The square and whisker report the paired median and its exact two-sided
-95 percent order-statistic confidence interval (attained coverage 96.1 percent).
-Lower time is better. The interval describes within-run round-to-round variation
-for this fixture and hosted runner; it does not quantify variation across hosts
-or workloads.*
+enabled and disabled. Each point is the mean wall-clock time per transaction for
+one 50,000-transaction sample; lines connect the two conditions within each of
+12 alternating-order rounds, and short horizontal bars show the condition
+medians. All 12 paired rounds have a lower sample mean with payload generation
+disabled. The annotation reports the paired median difference and its exact
+two-sided 95 percent order-statistic confidence interval (attained coverage 96.1
+percent). Lower time is better. The interval describes within-run round-to-round
+variation for this fixture and hosted runner; it does not quantify variation
+across hosts or workloads.*
 
 The raw CSV committed next to the figure was produced by [GitHub Actions run
 30644388937](https://github.com/upgle/ModSecurity/actions/runs/30644388937).
