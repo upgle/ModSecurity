@@ -190,7 +190,7 @@ namespace modsecurity {
 
 #define MODSECURITY_MAJOR "3"
 #define MODSECURITY_MINOR "0"
-#define MODSECURITY_PATCHLEVEL "16"
+#define MODSECURITY_PATCHLEVEL "17"
 #define MODSECURITY_TAG ""
 #define MODSECURITY_TAG_NUM "100"
 
@@ -198,7 +198,7 @@ namespace modsecurity {
     MODSECURITY_MINOR "." MODSECURITY_PATCHLEVEL \
     MODSECURITY_TAG
 
-#define MODSECURITY_VERSION_NUM 30160100
+#define MODSECURITY_VERSION_NUM 30170100
 
 #define MODSECURITY_CHECK_VERSION(a) (MODSECURITY_VERSION_NUM <= a)
 
@@ -292,6 +292,33 @@ class ModSecurity {
      */
     void setServerLogCb(ModSecLogCb cb, int properties);
 
+    /**
+     * Controls whether disruptive interventions include the human-readable
+     * ModSecurityIntervention::log payload.
+     *
+     * The payload is enabled by default. Connectors that do not consume it
+     * may disable it before processing transactions to avoid formatting and
+     * copying unused text. This setting does not affect disruptive actions,
+     * status codes, redirect URLs, server log callbacks, debug logs, or audit
+     * logs.
+     *
+     * Disruptive rule messages are not sent to the server log callback.
+     * Connectors that rely on this payload for error logging will no longer
+     * log these messages when the payload is disabled. Audit logging still
+     * depends on the audit log settings.
+     *
+     * This setting applies to the ModSecurity instance and every transaction
+     * created from it; it is not a per-transaction or per-rule option.
+     * Configure it before publishing the instance to worker threads. Changing
+     * it while transactions are being processed is not thread-safe.
+     */
+    void setInterventionLogPayloadEnabled(bool enabled);
+
+    /**
+     * Returns whether human-readable intervention log payloads are enabled.
+     */
+    bool isInterventionLogPayloadEnabled() const;
+
     void serverLog(void *data, const RuleMessage &rm);
 
     const std::string& getConnectorInformation() const;
@@ -327,6 +354,28 @@ const char *msc_who_am_i(ModSecurity *msc);
 void msc_set_connector_info(ModSecurity *msc, const char *connector);
 /** @ingroup ModSecurity_C_API */
 void msc_set_log_cb(ModSecurity *msc, ModSecLogCb cb);
+/**
+ * @ingroup ModSecurity_C_API
+ *
+ * Controls whether disruptive interventions include the human-readable
+ * ModSecurityIntervention::log payload. A zero value disables the payload;
+ * any nonzero value enables it. The payload is enabled by default.
+ *
+ * This setting applies to the ModSecurity instance and every transaction
+ * created from it; it is not a per-transaction or per-rule option. Configure
+ * it before publishing the instance to worker threads. It does not affect
+ * disruptive actions, status codes, redirect URLs, server log callbacks,
+ * debug logs, or audit logs.
+ *
+ * Disruptive rule messages are not sent to the server log callback.
+ * Connectors that rely on this payload for error logging will no longer
+ * log these messages when the payload is disabled. Audit logging still
+ * depends on the audit log settings.
+ *
+ * @param msc A non-NULL ModSecurity instance.
+ * @param enabled Zero to disable the payload, nonzero to enable it.
+ */
+void msc_set_intervention_log_payload_enabled(ModSecurity *msc, int enabled);
 /** @ingroup ModSecurity_C_API */
 void msc_cleanup(ModSecurity *msc);
 

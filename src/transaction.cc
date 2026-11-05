@@ -34,6 +34,7 @@
 
 #include "modsecurity/actions/action.h"
 #include "src/actions/disruptive/deny.h"
+#include "src/intervention_log.h"
 #include "modsecurity/intervention.h"
 #include "modsecurity/modsecurity.h"
 #include "src/request_body_processor/multipart.h"
@@ -953,8 +954,8 @@ int Transaction::appendRequestBody(const unsigned char *buf, size_t len) {
                     "request");
                 if (getRuleEngineState() == RulesSet::EnabledRuleEngine) {
                     intervention::free(&m_it);
-                    m_it.log = strdup("Request body limit is marked to " \
-                            "reject the request");
+                    intervention::setLogPayload(this,
+                        "Request body limit is marked to reject the request");
                     m_it.status = 403;
                     m_it.disruptive = true;
                 } else {
@@ -1129,7 +1130,7 @@ int Transaction::processResponseBody() {
 
     const std::set<std::string> &bi = \
         m_rules->m_responseBodyTypeToBeInspected.m_value;
-    auto t = bi.find(m_variableResponseContentType.m_value);
+    auto t = bi.find(utils::string::tolower(m_variableResponseContentType.m_value));
     if (t == bi.end()
         && m_rules->m_responseBodyTypeToBeInspected.m_set == true) {
         ms_dbg(5, "Response Content-Type is " \
@@ -1180,7 +1181,7 @@ int Transaction::appendResponseBody(const unsigned char *buf, size_t len) {
 
     const std::set<std::string> &bi = \
         this->m_rules->m_responseBodyTypeToBeInspected.m_value;
-    auto t = bi.find(m_variableResponseContentType.m_value);
+    auto t = bi.find(utils::string::tolower(m_variableResponseContentType.m_value));
     if (t == bi.end() && bi.empty() == false) {
         ms_dbg(4, "Not appending response body. " \
             "Response Content-Type is " \
@@ -1212,8 +1213,8 @@ int Transaction::appendResponseBody(const unsigned char *buf, size_t len) {
                     "request");
                 if (getRuleEngineState() == RulesSet::EnabledRuleEngine) {
                     intervention::free(&m_it);
-                    m_it.log = strdup("Response body limit is marked to reject " \
-                        "the request");
+                    intervention::setLogPayload(this,
+                        "Response body limit is marked to reject the request");
                     m_it.status = 403;
                     m_it.disruptive = true;
                 } else {
